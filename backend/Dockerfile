@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Copiez le fichier requirements.txt dans le répertoire de travail
 COPY ./backend/requirements.txt .
-
+COPY ./requirements.txt .
 # Installez les dépendances
 RUN pip install --no-cache-dir --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
