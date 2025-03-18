@@ -32,3 +32,4 @@ jobs:
             --image monregistry.azurecr.io/backend:latest \
             --dns-name-label backend-app \
             --ports 8051
+          
