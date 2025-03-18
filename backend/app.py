@@ -104,9 +104,10 @@ DB_PATH = "/app/network_traffic.db"
 def watch_and_process():
     """
     Surveille un dossier en temps réel, détecte le fichier le plus récent,
-    lit chaque ligne individuellement, l'envoie à preprocess_data(), attend la réponse,
-    stocke les données traitées en BDD, puis supprime le fichier après traitement.
+    lit toutes les lignes du fichier en une seule fois, les envoie à preprocess_data() en batch,
+    puis stocke les données traitées en BDD dans une seule transaction.
     """
+
     if not os.path.exists(WATCHED_FOLDER):
         os.makedirs(WATCHED_FOLDER)
 
@@ -122,101 +123,55 @@ def watch_and_process():
                 
                 print(f"📂 Nouvelle alerte détectée : {latest_file}")
 
-                # Lire le fichier ligne par ligne
-                with open(file_path, "r") as file:
-                    for line in file:
-                        raw_data = line.strip().split(",")  # Adapter le délimiteur si nécessaire
+                # Charger tout le fichier d'un coup dans un DataFrame
+                df_raw = pd.read_csv(file_path, delimiter=",", header=None)  # Adapter le délimiteur si nécessaire
 
-                        # Vérifier que la ligne a bien toutes les colonnes attendues
-                        if len(raw_data) < 40:  
-                            print(f"⚠️ Ligne ignorée, colonnes insuffisantes : {line}")
-                            continue
+                # Vérifier le nombre de colonnes attendu pour éviter les erreurs
+                if df_raw.shape[1] != 43:  
+                    print(f"⚠️ Fichier ignoré, nombre de colonnes incorrect ({df_raw.shape[1]} colonnes trouvées, 43 attendues).")
+                    os.remove(file_path)  # Supprimer le fichier invalide
+                    continue
 
-                        # Envoyer à preprocess_data() et ATTENDRE la réponse
-                        processed_data = preprocess_data(raw_data)
+                # Envoyer toutes les lignes à preprocess_data() en une seule fois
+                df_processed = preprocess_data(df_raw)
 
-                        if processed_data is None:
-                            print(f"⚠️ Aucune donnée retournée par preprocess_data(), ligne ignorée.")
-                            continue  # Ne pas insérer si aucune donnée retournée
+                if df_processed is None or df_processed.empty:
+                    print(f"⚠️ Aucune donnée retournée par preprocess_data(), fichier ignoré.")
+                    os.remove(file_path)
+                    continue  
 
-                        # Connexion à la base de données
-                        conn = sqlite3.connect(DB_PATH)
-                        cursor = conn.cursor()
-                        try:
-                            # Insérer la ligne traitée en BDD
-                            cursor.execute("""
-                                INSERT INTO connections 
-                                (timestamp, duration, src_bytes, dst_bytes, land, wrong_fragment, urgent, hot, num_failed_logins, 
-                                logged_in, num_compromised, root_shell, su_attempted, num_root, num_file_creations, num_shells, 
-                                num_access_files, num_outbound_cmds, is_host_login, is_guest_login, count, srv_count, serror_rate, 
-                                srv_serror_rate, rerror_rate, srv_rerror_rate, same_srv_rate, diff_srv_rate, srv_diff_host_rate, 
-                                dst_host_count, dst_host_srv_count, dst_host_same_srv_rate, dst_host_diff_srv_rate, dst_host_same_src_port_rate, 
-                                dst_host_srv_diff_host_rate, dst_host_serror_rate, dst_host_srv_serror_rate, dst_host_rerror_rate, dst_host_srv_rerror_rate, 
-                                protocol_type_icmp, protocol_type_tcp, protocol_type_udp, flag_OTH, flag_REJ, flag_RSTO, flag_RSTOS0, 
-                                flag_RSTR, flag_S0, flag_S1, flag_S2, flag_S3, flag_SF, flag_SH, label) 
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                            """, (
-                                datetime.utcnow().isoformat(),  # Ajout du timestamp automatique
-                                processed_data[1],  # duration
-                                processed_data[2],  # src_bytes
-                                processed_data[3],  # dst_bytes
-                                int(processed_data[4] == "VRAI"),  # land
-                                processed_data[5],  # wrong_fragment
-                                processed_data[6],  # urgent
-                                processed_data[7],  # hot
-                                processed_data[8],  # num_failed_logins
-                                int(processed_data[9] == "VRAI"),  # logged_in
-                                processed_data[10],  # num_compromised
-                                processed_data[11],  # root_shell
-                                processed_data[12],  # su_attempted
-                                processed_data[13],  # num_root
-                                processed_data[14],  # num_file_creations
-                                processed_data[15],  # num_shells
-                                processed_data[16],  # num_access_files
-                                processed_data[17],  # num_outbound_cmds
-                                int(processed_data[18] == "VRAI"),  # is_host_login
-                                int(processed_data[19] == "VRAI"),  # is_guest_login
-                                processed_data[20],  # count
-                                processed_data[21],  # srv_count
-                                processed_data[22],  # serror_rate
-                                processed_data[23],  # srv_serror_rate
-                                processed_data[24],  # rerror_rate
-                                processed_data[25],  # srv_rerror_rate
-                                processed_data[26],  # same_srv_rate
-                                processed_data[27],  # diff_srv_rate
-                                processed_data[28],  # srv_diff_host_rate
-                                processed_data[29],  # dst_host_count
-                                processed_data[30],  # dst_host_srv_count
-                                processed_data[31],  # dst_host_same_srv_rate
-                                processed_data[32],  # dst_host_diff_srv_rate
-                                processed_data[33],  # dst_host_same_src_port_rate
-                                processed_data[34],  # dst_host_srv_diff_host_rate
-                                processed_data[35],  # dst_host_serror_rate
-                                processed_data[36],  # dst_host_srv_serror_rate
-                                processed_data[37],  # dst_host_rerror_rate
-                                processed_data[38],  # dst_host_srv_rerror_rate
-                                int(processed_data[39] == "VRAI"),  # protocol_type_icmp
-                                int(processed_data[40] == "VRAI"),  # protocol_type_tcp
-                                int(processed_data[41] == "VRAI"),  # protocol_type_udp
-                                int(processed_data[42] == "VRAI"),  # flag_OTH
-                                int(processed_data[43] == "VRAI"),  # flag_REJ
-                                int(processed_data[44] == "VRAI"),  # flag_RSTO
-                                int(processed_data[45] == "VRAI"),  # flag_RSTOS0
-                                int(processed_data[46] == "VRAI"),  # flag_RSTR
-                                int(processed_data[47] == "VRAI"),  # flag_S0
-                                int(processed_data[48] == "VRAI"),  # flag_S1
-                                int(processed_data[49] == "VRAI"),  # flag_S2
-                                int(processed_data[50] == "VRAI"),  # flag_S3
-                                int(processed_data[51] == "VRAI"),  # flag_SF
-                                int(processed_data[52] == "VRAI"),  # flag_SH
-                                processed_data[53]  # label
-                            ))
+                # Vérifier que les colonnes attendues sont bien présentes après preprocessing
+                expected_columns = 53
+                if df_processed.shape[1] != expected_columns:
+                    print(f"⚠️ Erreur après preprocessing : {df_processed.shape[1]} colonnes trouvées, {expected_columns} attendues.")
+                    os.remove(file_path)
+                    continue
+                
+                # Ajouter une colonne "timestamp" pour chaque ligne
+                df_processed.insert(0, "timestamp", datetime.utcnow().isoformat())
 
-                            conn.commit()
-                            print("✅ Ligne insérée en BDD")
+                # Connexion à la base de données (une seule connexion pour toutes les lignes)
+                conn = sqlite3.connect(DB_PATH)
+                cursor = conn.cursor()
 
-                        finally:
-                            conn.close()  # Toujours fermer la connexion à la BDD
+                # Insérer toutes les lignes d'un coup avec `executemany()`
+                cursor.executemany("""
+                    INSERT INTO connections 
+                    (timestamp, duration, src_bytes, dst_bytes, land, wrong_fragment, urgent, hot, num_failed_logins, 
+                    logged_in, num_compromised, root_shell, su_attempted, num_root, num_file_creations, num_shells, 
+                    num_access_files, num_outbound_cmds, is_host_login, is_guest_login, count, srv_count, serror_rate, 
+                    srv_serror_rate, rerror_rate, srv_rerror_rate, same_srv_rate, diff_srv_rate, srv_diff_host_rate, 
+                    dst_host_count, dst_host_srv_count, dst_host_same_srv_rate, dst_host_diff_srv_rate, dst_host_same_src_port_rate, 
+                    dst_host_srv_diff_host_rate, dst_host_serror_rate, dst_host_srv_serror_rate, dst_host_rerror_rate, dst_host_srv_rerror_rate, 
+                    protocol_type_icmp, protocol_type_tcp, protocol_type_udp, flag_OTH, flag_REJ, flag_RSTO, flag_RSTOS0, 
+                    flag_RSTR, flag_S0, flag_S1, flag_S2, flag_S3, flag_SF, flag_SH, label) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, df_processed.values.tolist())
+
+                # Valider la transaction
+                conn.commit()
+                conn.close()
+                print(f"✅ {len(df_processed)} lignes insérées en BDD")
 
                 # Supprimer le fichier après traitement
                 os.remove(file_path)
