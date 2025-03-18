@@ -191,7 +191,7 @@ def watch_and_process():
                     os.remove(file_path)
                     continue
                 
-                df_processed.insert(0, "timestamp", datetime.utcnow().isoformat())
+                
 
                 conn = sqlite3.connect(DB_PATH, check_same_thread=False)
                 cursor = conn.cursor()
@@ -200,6 +200,8 @@ def watch_and_process():
                 print(f"🔢 Colonnes du DataFrame traité : {df_processed.shape[1]}",flush=True)
                 print(f"🔢 Nombre de valeurs par ligne : {len(df_processed.values.tolist()[0])}",flush=True)
                 print(f"🧐 Colonnes du DataFrame après preprocessing: {df_processed.columns.tolist()}", flush=True)
+                df_processed.insert(0, "timestamp", datetime.utcnow().isoformat())
+                print(f"----------🧐 Colonnes du DataFrame après TIMESTAMP:--------- {df_processed.columns.tolist()}", flush=True)
 
 
                 try:
