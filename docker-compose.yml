@@ -4,7 +4,8 @@ services:
     ports: 
     - "8000:8000"
     volumes: 
-    - ./backend:/app
+      - /home/azureuser/Hackathon/backend/watched_folder:/app/watched_folder  # Lien entre la VM et le conteneur
+      - /home/azureuser/Hackathon/backend/network_traffic.db:/app/network_traffic.db
     restart: always
 
   frontend:
