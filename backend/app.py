@@ -198,6 +198,7 @@ def watch_and_process():
 
                 print(f"🔢 Colonnes du DataFrame traité : {df_processed.shape[1]}",flush=True)
                 print(f"🔢 Nombre de valeurs par ligne : {len(df_processed.values.tolist()[0])}",flush=True)
+                print(f"🧐 Colonnes du DataFrame après preprocessing: {df_processed.columns.tolist()}", flush=True)
 
 
                 try:
