@@ -150,7 +150,7 @@ def init_db():
                 flag_S3 INTEGER,
                 flag_SF INTEGER,
                 flag_SH INTEGER,
-                Predicted_Class INTEGER
+                Predicted_Class INTEGER,
                 Prediction_Probability REAL
             )
         """)
