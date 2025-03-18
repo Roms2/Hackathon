@@ -149,7 +149,9 @@ def init_db():
                 flag_S2 INTEGER,
                 flag_S3 INTEGER,
                 flag_SF INTEGER,
-                flag_SH INTEGER
+                flag_SH INTEGER,
+                Predicted_Class INTEGER
+                Prediction_Probability REAL
             )
         """)
         conn.commit()
@@ -186,7 +188,7 @@ def watch_and_process():
 
                 df_processed = preprocess_data(df_raw)
 
-                if df_processed.shape[1] != 117:
+                if df_processed.shape[1] != 119:
                     print(f"⚠️ Erreur après preprocessing : {df_processed.shape[1]} colonnes trouvées, 117 attendues.", flush=True)
                     os.remove(file_path)
                     continue
@@ -203,7 +205,6 @@ def watch_and_process():
                 df_processed.insert(0, "timestamp", datetime.utcnow().isoformat())
                 print(f"🔢 Nombre de valeurs par ligne : {len(df_processed.values.tolist()[0])}",flush=True)
                 print(f"----------🧐 Colonnes du DataFrame après TIMESTAMP:--------- {df_processed.columns.tolist()}", flush=True)
-
 
                 try:
                     cursor.executemany("""
@@ -229,7 +230,7 @@ def watch_and_process():
                         service_sql_net, service_ssh, service_sunrpc, service_supdup, service_systat, 
                         service_telnet,service_tftp_u, service_tim_i, service_time, service_urp_i, service_uucp, service_uucp_path, 
                         service_vmnet, service_whois, flag_OTH, flag_REJ, flag_RSTO, flag_RSTOS0, flag_RSTR, 
-                        flag_S0, flag_S1, flag_S2, flag_S3, flag_SF, flag_SH) 
+                        flag_S0, flag_S1, flag_S2, flag_S3, flag_SF, flag_SH, Predicted_Class, Prediction_Probability) 
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,? , ?, ?, ?, ?, ?)
                     """, df_processed.values.tolist())
 
@@ -256,19 +257,44 @@ time.sleep(2)
 thread = threading.Thread(target=watch_and_process, daemon=True)
 thread.start()
 
-# ------------------------ 4️⃣ 🚀 API FASTAPI ------------------------
+# ------------------------ 4️⃣ 🚀 API Valeurs auto ------------------------
+
+
+
+# ------------------------ 5 🚀 API FASTAPI ------------------------
 
 app = FastAPI()
+
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # ⚠️ Autorise toutes les origines (sécurisé en local)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.get("/get_data")
 def get_data():
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-    cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM connections")
-    count = cursor.fetchone()[0]
+    df = pd.read_sql_query("SELECT * FROM connections ORDER BY timestamp DESC LIMIT 100", conn)
     conn.close()
-    return {"total_rows": count}
+    
+    # Renvoie les données sous forme de liste de dictionnaires
+    return df.to_dict(orient="records")
+
+
+
+
+# Lancer le thread de surveillance
+thread = threading.Thread(target=watch_and_process, daemon=True)
+thread.start()
+
 
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+

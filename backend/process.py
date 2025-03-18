@@ -45,6 +45,8 @@ def preprocess_data(df):
         print(f"➕ Ajout de {len(missing_cols)} colonnes manquantes après traitement : {missing_cols}")
         missing_df = pd.DataFrame(0, index=df_encoded.index, columns=missing_cols)
         df_encoded = pd.concat([df_encoded, missing_df], axis=1)
+    
+
 
     # Forcer le bon ordre des colonnes
     df_encoded = df_encoded[reference_columns_post_processing]
@@ -53,6 +55,16 @@ def preprocess_data(df):
     if df_encoded.shape[1] != len(reference_columns_post_processing):
         print(f"❌ ERREUR : {df_encoded.shape[1]} colonnes générées, mais {len(reference_columns_post_processing)} attendues !")
         return None
+    
+
+    model = joblib.load('model.pkl')
+    # Effectuer les prédictions en une seule fois (plus rapide)
+    proba = model.predict_proba(df_encoded)[:, 1]  # Probabilité d'appartenir à la classe 1
+    predicted_class = (proba >= 0.5).astype(int)  # Seuil à 0.5 pour classification
+    # Ajouter les résultats au DataFrame
+    df_encoded['Predicted_Class'] = predicted_class
+    df_encoded['Prediction_Probability'] = proba
+
 
     print(f"✅ Colonnes après correction : {df_encoded.shape[1]} colonnes (Attendu : {len(reference_columns_post_processing)})")
 
