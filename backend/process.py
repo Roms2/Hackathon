@@ -8,7 +8,7 @@ REFERENCE_COLUMNS_PATH = "reference_columns.pkl"
 def preprocess_data(df):
     """
     Prétraite les données brutes pour qu'elles correspondent aux attentes du modèle :
-    - Applique One-Hot Encoding avec un ensemble de colonnes fixes
+    - Applique One-Hot Encoding uniquement aux colonnes "protocol_type" et "flag"
     - Ajoute les colonnes manquantes (remplies avec des 0) via `concat()`
     - Supprime les colonnes en trop pour correspondre exactement aux 54 colonnes attendues
     - Convertit les booléens "VRAI"/"FAUX" en 1/0
@@ -27,8 +27,9 @@ def preprocess_data(df):
     # Assigner des noms de colonnes génériques (les données sont supposées toujours dans le bon ordre)
     df.columns = [f"col_{i}" for i in range(df.shape[1])]
 
-    # Appliquer One-Hot Encoding
-    df_encoded = pd.get_dummies(df)
+    # Identifier les colonnes à encoder
+    categorical_columns = ["col_2", "col_4"] 
+    df_encoded = pd.get_dummies(df, columns=categorical_columns)
 
     # Convertir "VRAI"/"FAUX" en 1/0
     df_encoded = df_encoded.replace({"VRAI": 1, "FAUX": 0})
