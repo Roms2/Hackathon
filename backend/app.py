@@ -96,15 +96,21 @@ init_db()  # Initialisation au démarrage
 
 # ------------------------ 3️⃣ 👀 SURVEILLANCE TEMPS RÉEL ------------------------
 
+
+
 def watch_and_process():
     """
     Surveille un dossier en temps réel, détecte le fichier le plus récent,
     l'envoie à la fonction process_file(), stocke les données traitées en BDD,
     puis supprime le fichier après traitement.
     """
+    if not os.path.exists(WATCHED_FOLDER):
+        os.makedirs(WATCHED_FOLDER)
+
     while True:
         try:
             # Liste tous les fichiers du dossier
+            
             files = [f for f in os.listdir(WATCHED_FOLDER) if os.path.isfile(os.path.join(WATCHED_FOLDER, f))]
             
             if files:
