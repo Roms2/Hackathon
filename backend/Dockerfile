@@ -5,7 +5,7 @@ FROM python:3.9-slim
 WORKDIR /app
 
 # Copiez le fichier requirements.txt dans le répertoire de travail
-COPY ./requirements.txt .
+COPY ./requirements.txt /code/requirements.txt
 
 # Installez les dépendances
 RUN pip install --no-cache-dir --upgrade pip
