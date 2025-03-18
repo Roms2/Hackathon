@@ -19,6 +19,8 @@ def preprocess_data(df):
     # Appliquer One-Hot Encoding
     df_encoded = pd.get_dummies(df)
 
+    print(len(df_encoded.columns))
+
     # Convertir "VRAI"/"FAUX" en 1/0 si nécessaire
     df_encoded = df_encoded.replace({"VRAI": 1, "FAUX": 0})
 
