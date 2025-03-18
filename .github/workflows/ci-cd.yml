@@ -12,8 +12,6 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v2  # Récupère le code depuis GitHub
-
-      - name: Login to Azure Container Registry (ACR)
         with:
             username: ${{ secrets.AZURE_CLIENT_ID }}
             password: ${{ secrets.AZURE_CLIENT_SECRET }} 
