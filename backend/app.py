@@ -101,6 +101,9 @@ init_db()  # Initialisation au démarrage
 WATCHED_FOLDER = "/app/watched_folder"
 DB_PATH = "/app/network_traffic.db"
 
+WATCHED_FOLDER = "/app/watched_folder"
+DB_PATH = "/app/network_traffic.db"
+
 def watch_and_process():
     """
     Surveille un dossier en temps réel, détecte le fichier le plus récent,
@@ -126,52 +129,63 @@ def watch_and_process():
                 # Charger tout le fichier d'un coup dans un DataFrame
                 df_raw = pd.read_csv(file_path, delimiter=",", header=None)  # Adapter le délimiteur si nécessaire
 
-                # Vérifier le nombre de colonnes attendu pour éviter les erreurs
-                if df_raw.shape[1] != 43:  
-                    print(f"⚠️ Fichier ignoré, nombre de colonnes incorrect ({df_raw.shape[1]} colonnes trouvées, 43 attendues).")
+                # Vérifier le nombre de colonnes attendu AVANT preprocessing
+                expected_raw_columns = 43
+                if df_raw.shape[1] != expected_raw_columns:  
+                    print(f"⚠️ Fichier ignoré, nombre de colonnes incorrect ({df_raw.shape[1]} colonnes trouvées, {expected_raw_columns} attendues).")
                     os.remove(file_path)  # Supprimer le fichier invalide
                     continue
 
                 # Envoyer toutes les lignes à preprocess_data() en une seule fois
                 df_processed = preprocess_data(df_raw)
 
+                # Vérifier le résultat du preprocessing
                 if df_processed is None or df_processed.empty:
-                    print(f"⚠️ Aucune donnée retournée par preprocess_data(), fichier ignoré.")
+                    print("⚠️ Erreur: preprocess_data() n'a retourné aucune donnée.")
                     os.remove(file_path)
                     continue  
 
                 # Vérifier que les colonnes attendues sont bien présentes après preprocessing
-                expected_columns = 53
-                if df_processed.shape[1] != expected_columns:
-                    print(f"⚠️ Erreur après preprocessing : {df_processed.shape[1]} colonnes trouvées, {expected_columns} attendues.")
+                expected_columns = 54  # 53 colonnes prétraitées + 1 timestamp
+                if df_processed.shape[1] != expected_columns - 1:
+                    print(f"⚠️ Erreur après preprocessing : {df_processed.shape[1]} colonnes trouvées, {expected_columns - 1} attendues.")
                     os.remove(file_path)
                     continue
                 
                 # Ajouter une colonne "timestamp" pour chaque ligne
                 df_processed.insert(0, "timestamp", datetime.utcnow().isoformat())
 
+                print(f"🔍 Vérification finale des données avant insertion : {df_processed.head()}")
+
                 # Connexion à la base de données (une seule connexion pour toutes les lignes)
                 conn = sqlite3.connect(DB_PATH)
                 cursor = conn.cursor()
 
-                # Insérer toutes les lignes d'un coup avec `executemany()`
-                cursor.executemany("""
-                    INSERT INTO connections 
-                    (timestamp, duration, src_bytes, dst_bytes, land, wrong_fragment, urgent, hot, num_failed_logins, 
-                    logged_in, num_compromised, root_shell, su_attempted, num_root, num_file_creations, num_shells, 
-                    num_access_files, num_outbound_cmds, is_host_login, is_guest_login, count, srv_count, serror_rate, 
-                    srv_serror_rate, rerror_rate, srv_rerror_rate, same_srv_rate, diff_srv_rate, srv_diff_host_rate, 
-                    dst_host_count, dst_host_srv_count, dst_host_same_srv_rate, dst_host_diff_srv_rate, dst_host_same_src_port_rate, 
-                    dst_host_srv_diff_host_rate, dst_host_serror_rate, dst_host_srv_serror_rate, dst_host_rerror_rate, dst_host_srv_rerror_rate, 
-                    protocol_type_icmp, protocol_type_tcp, protocol_type_udp, flag_OTH, flag_REJ, flag_RSTO, flag_RSTOS0, 
-                    flag_RSTR, flag_S0, flag_S1, flag_S2, flag_S3, flag_SF, flag_SH, label) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, df_processed.values.tolist())
+                try:
+                    # Insérer toutes les lignes d'un coup avec `executemany()`
+                    query = """INSERT INTO connections 
+                        (timestamp, duration, src_bytes, dst_bytes, land, wrong_fragment, urgent, hot, num_failed_logins, 
+                        logged_in, num_compromised, root_shell, su_attempted, num_root, num_file_creations, num_shells, 
+                        num_access_files, num_outbound_cmds, is_host_login, is_guest_login, count, srv_count, serror_rate, 
+                        srv_serror_rate, rerror_rate, srv_rerror_rate, same_srv_rate, diff_srv_rate, srv_diff_host_rate, 
+                        dst_host_count, dst_host_srv_count, dst_host_same_srv_rate, dst_host_diff_srv_rate, dst_host_same_src_port_rate, 
+                        dst_host_srv_diff_host_rate, dst_host_serror_rate, dst_host_srv_serror_rate, dst_host_rerror_rate, dst_host_srv_rerror_rate, 
+                        protocol_type_icmp, protocol_type_tcp, protocol_type_udp, flag_OTH, flag_REJ, flag_RSTO, flag_RSTOS0, 
+                        flag_RSTR, flag_S0, flag_S1, flag_S2, flag_S3, flag_SF, flag_SH, label) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """
+                    cursor.executemany(query, df_processed.values.tolist())
 
-                # Valider la transaction
-                conn.commit()
-                conn.close()
-                print(f"✅ {len(df_processed)} lignes insérées en BDD")
+                    # Valider la transaction
+                    conn.commit()
+                    print(f"✅ {len(df_processed)} lignes insérées avec succès en BDD !")
+
+                except Exception as e:
+                    conn.rollback()  # Annuler la transaction si erreur
+                    print(f"❌ ERREUR SQL lors de l'insertion : {e}")
+
+                finally:
+                    conn.close()
 
                 # Supprimer le fichier après traitement
                 os.remove(file_path)
