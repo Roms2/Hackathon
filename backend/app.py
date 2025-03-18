@@ -152,7 +152,7 @@ def init_db():
         conn.commit()
         print("✅ Table 'connections' initialisée avec succès.", flush=True)
     except Exception as e:
-        print(f"❌ Erreur lors de l'initialisation de la base de données : {e}")
+        print(f"❌ Erreur lors de l'initialisation de la base de données : {e}",flush=True)
     finally:
         conn.close()
 
@@ -192,6 +192,11 @@ def watch_and_process():
 
                 conn = sqlite3.connect(DB_PATH, check_same_thread=False)
                 cursor = conn.cursor()
+                print(f"📊 Vérification avant insertion :",flush=True)
+                print(f"🔢 Colonnes SQL attendues : {len(reference_columns) + 1}",flush=True)  # 117 colonnes + timestamp
+                print(f"🔢 Colonnes du DataFrame traité : {df_processed.shape[1]}",flush=True)
+                print(f"🔢 Nombre de valeurs par ligne : {len(df_processed.values.tolist()[0])}",flush=True)
+
 
                 try:
                     cursor.executemany("""
