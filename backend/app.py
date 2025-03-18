@@ -96,7 +96,7 @@ def watch_and_process():
                 print(f"📂 Nouvelle alerte détectée : {latest_file}")
                 # Charger le fichier en DataFrame 
                 df = pd.read_csv(file_path, delimiter=",")  # Adapter le délimiteur si nécessaire
-                processed_data = process_file(df)  # Envoyer le DataFrame à process_file()
+                processed_data = preprocess_data(df)  # Envoyer le DataFrame à process_file()
                 # Traiter le fichier avec la fonction process_file() (retourne un dataframe ou une liste de tuples)
                 
                 if processed_data:
