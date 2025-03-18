@@ -10,27 +10,40 @@ def preprocess_data(df):
     - Applique One-Hot Encoding avec un ensemble de colonnes fixes
     - Ajoute les colonnes manquantes (remplies avec des 0)
     - Convertit les booléens "VRAI"/"FAUX" en 1/0
-    - Retourne un DataFrame final avec les 54 colonnes attendues (incluant "label")
+    - Retourne un DataFrame final avec les 54 colonnes attendues
     """
+    # Charger la liste des colonnes attendues pour l'encodage
+    reference_columns = joblib.load(REFERENCE_COLUMNS_PATH)
 
-    # ✅ Charger les colonnes de référence et s'assurer qu'elles sont sous forme de liste
-    reference_columns = list(joblib.load(REFERENCE_COLUMNS_PATH))  # Assurer que c'est bien une liste
-
-    # ✅ Appliquer One-Hot Encoding
+    # Appliquer One-Hot Encoding
     df_encoded = pd.get_dummies(df)
-
-    # ✅ Convertir "VRAI"/"FAUX" en 1/0 si nécessaire
-    df_encoded = df_encoded.replace({"VRAI": 1, "FAUX": 0}).astype(int)
-
-    # ✅ S'assurer que toutes les colonnes de référence sont présentes
-    df_encoded = df_encoded.reindex(columns=reference_columns, fill_value=0)
-
-    # ✅ Ajouter la colonne "label" s'il manque la dernière colonne
-    if "label" not in df_encoded.columns:
-        df_encoded["label"] = "unknown"  # Valeur par défaut
     
-    print(f"🧐 Colonnes après encodage: {df_encoded.shape[1]} colonnes trouvées")
-    print(f"👉 Colonnes présentes: {list(df_encoded.columns)}")
-
-
+    # Convertir "VRAI"/"FAUX" en 1/0 si nécessaire
+    df_encoded = df_encoded.replace({"VRAI": 1, "FAUX": 0})
+    
+    # Vérifier les colonnes après encodage
+    common_cols = set(df_encoded.columns) & set(reference_columns)
+    missing_cols = set(reference_columns) - set(df_encoded.columns)
+    extra_cols = set(df_encoded.columns) - set(reference_columns)
+    
+    # Supprimer les colonnes en trop
+    if extra_cols:
+        print(f"⚠️ Suppression de {len(extra_cols)} colonnes en trop : {extra_cols}")
+        df_encoded = df_encoded.drop(columns=extra_cols)
+    
+    # Ajouter les colonnes manquantes avec des 0
+    if missing_cols:
+        print(f"➕ Ajout de {len(missing_cols)} colonnes manquantes : {missing_cols}")
+        for col in missing_cols:
+            df_encoded[col] = 0
+    
+    # Réorganiser les colonnes dans l'ordre correct
+    df_encoded = df_encoded[reference_columns]
+    
+    # Ajouter une colonne label si elle n'existe pas
+    if 'label' not in df_encoded.columns:
+        df_encoded['label'] = 'default'
+    
+    print(f"✅ Colonnes après correction : {df_encoded.shape[1]} colonnes")
+    
     return df_encoded
