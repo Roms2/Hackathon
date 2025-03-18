@@ -125,7 +125,7 @@ def watch_and_process():
                 # Lire le fichier ligne par ligne
                 with open(file_path, "r") as file:
                     for line in file:
-                        raw_data = line.strip().split(";")  # Adapter le délimiteur si nécessaire
+                        raw_data = line.strip().split(",")  # Adapter le délimiteur si nécessaire
 
                         # Vérifier que la ligne a bien toutes les colonnes attendues
                         if len(raw_data) < 40:  
