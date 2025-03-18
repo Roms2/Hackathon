@@ -292,6 +292,8 @@ class NetworkConnection(BaseModel):
 # ------------------------ 5️⃣ 🚀 DÉMARRAGE AUTOMATIQUE AVEC MULTITHREADING ------------------------
 
 
+import threading
+
 if __name__ == "__main__":
     thread = threading.Thread(target=watch_and_process, daemon=True)
     thread.start()
