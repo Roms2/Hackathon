@@ -16,8 +16,9 @@ jobs:
       - name: Login to Azure Container Registry (ACR)
         run: |
           echo "${{ secrets.AZURE_CREDENTIALS }}" | az login --service-principal \
-          --username ${{ secrets.AZURE_CLIENT_ID }} --password ${{ secrets.AZURE_CLIENT_SECRET }} \
-          --tenant ${{ secrets.AZURE_TENANT_ID }}
+            --username ${{ secrets.AZURE_CLIENT_ID }} \
+            --password ${{ secrets.AZURE_CLIENT_SECRET }} \
+            --tenant ${{ secrets.AZURE_TENANT_ID }}
 
       - name: Build & Push Backend
         run: |
@@ -27,8 +28,7 @@ jobs:
       - name: Deploy Backend
         run: |
           az container create --resource-group mon-groupe \
-          --name backend-api \
-          --image monregistry.azurecr.io/backend:latest \
-          --dns-name-label backend-app \
-          --ports 8051
-          
+            --name backend-api \
+            --image monregistry.azurecr.io/backend:latest \
+            --dns-name-label backend-app \
+            --ports 8051
