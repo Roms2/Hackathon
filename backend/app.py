@@ -128,7 +128,7 @@ def watch_and_process():
                         raw_data = line.strip().split(";")  # Adapter le délimiteur si nécessaire
 
                         # Vérifier que la ligne a bien toutes les colonnes attendues
-                        if len(raw_data) < 54:  
+                        if len(raw_data) < 40:  
                             print(f"⚠️ Ligne ignorée, colonnes insuffisantes : {line}")
                             continue
 
@@ -237,7 +237,6 @@ app = FastAPI()
 from fastapi import FastAPI, Query
 import sqlite3
 
-app = FastAPI()
 
 DB_PATH = "database.db"
 
