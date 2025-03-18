@@ -4,18 +4,28 @@ import sqlite3
 import pandas as pd
 import joblib
 from datetime import datetime
+import os
+import time
+import threading
+from process import process_file  # Fonction qui traite le fichier et retourne les données
 
-app = FastAPI()
 
-# Charger le modèle de Machine Learning
-MODEL_PATH = "model.pkl"  
-model = joblib.load(MODEL_PATH)
+# ------------------------ 1️⃣ 🚀 INITIALISATION VARIABLES ------------------------
 
-# Connexion à la base de données SQLite
 DB_PATH = "network_traffic.db"
 
+MODEL_PATH = "model.pkl"
+model = joblib.load(MODEL_PATH)
+
+WATCHED_FOLDER = "watched_folder/"
+
+
+# ------------------------ 2️⃣ 🗄️ INITIALISATION BDD ------------------------
+
 def init_db():
-    """Créer la base de données et la table si elles n'existent pas."""
+    """
+    Initialise la base de données SQLite en créant la table `connections` si elle n’existe pas.
+    """
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("""
@@ -55,16 +65,138 @@ def init_db():
             teardrop INTEGER,
             warezclient INTEGER,
             warezmaster INTEGER,
-            label TEXT,  -- Normal ou type d'attaque détecté
-            anomaly INTEGER  -- 0 = Normal, 1 = Anomalie
+            label TEXT,
+            anomaly INTEGER
         )
     """)
     conn.commit()
     conn.close()
 
-init_db()
+init_db()  # Initialisation au démarrage
 
-# Définition du format des données reçues
+
+# ------------------------ 3️⃣ 👀 SURVEILLANCE TEMPS RÉEL ------------------------
+
+def watch_and_process():
+    """
+    Surveille un dossier en temps réel, détecte le fichier le plus récent,
+    l'envoie à la fonction process_file(), stocke les données traitées en BDD,
+    puis supprime le fichier après traitement.
+    """
+    while True:
+        try:
+            # Liste tous les fichiers du dossier
+            files = [f for f in os.listdir(WATCHED_FOLDER) if os.path.isfile(os.path.join(WATCHED_FOLDER, f))]
+            
+            if files:
+                # Trouver le fichier le plus récent
+                latest_file = min(files, key=lambda f: os.path.getctime(os.path.join(WATCHED_FOLDER, f)))
+                file_path = os.path.join(WATCHED_FOLDER, latest_file)
+                
+                print(f"📂 Nouvelle alerte détectée : {latest_file}")
+                # Charger le fichier en DataFrame 
+                df = pd.read_csv(file_path, delimiter=",")  # Adapter le délimiteur si nécessaire
+                processed_data = process_file(df)  # Envoyer le DataFrame à process_file()
+                # Traiter le fichier avec la fonction process_file() (retourne un dataframe ou une liste de tuples)
+                
+                if processed_data:
+                    # Connexion à la base de données
+                    conn = sqlite3.connect(DB_PATH)
+                    cursor = conn.cursor()
+                    
+                    # Insérer chaque ligne de données traitées dans la BDD
+                    if isinstance(processed_data, list):  # Vérifie que les données sont bien sous forme de liste unique
+                        cursor.execute("""
+                            INSERT INTO connections 
+                            (timestamp, duration, protocol_type, service, flag, src_bytes, dst_bytes, count, serror_rate, 
+                            rerror_rate, same_srv_rate, back, buffer_overflow, ftp_write, guess_passwd, imap, ipsweep, land, 
+                            loadmodule, multihop, neptune, nmap, normal, perl, phf, pod, portsweep, rootkit, satan, smurf, spy, 
+                            teardrop, warezclient, warezmaster, label, anomaly)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """, (
+                            datetime.utcnow().isoformat(),  # Timestamp
+                            *processed_data  # Insère directement la seule ligne de données
+                        ))
+
+                    conn.commit()
+                    conn.close()
+                    print(f"✅ Données de {latest_file} insérées en BDD")
+
+
+                # Supprimer le fichier après traitement
+                os.remove(file_path)
+                print(f"🗑️ Fichier supprimé : {latest_file}")
+
+            # Pause avant la prochaine vérification
+            time.sleep(3)  # Vérifie toutes les 5 secondes
+
+        except Exception as e:
+            print(f"⚠️ Erreur dans la surveillance du dossier : {e}")
+            time.sleep(3)  # Pause pour éviter une boucle d'erreur infinie
+
+
+# ------------------------ 📡 4️⃣  API FASTAPI (Réponse au Frontend) ------------------------
+
+app = FastAPI()
+
+from fastapi import FastAPI, Query
+import sqlite3
+
+app = FastAPI()
+
+DB_PATH = "database.db"
+
+@app.get("/get_data")
+def get_data(
+    table: str,                          # Nom de la table à interroger
+    filter_column: str = None,           # Colonne à filtrer
+    filter_value: str = None,            # Valeur du filtre
+    sort_by: str = None,                 # Colonne pour trier les résultats
+    order: str = "asc",                  # "asc" (croissant) ou "desc" (décroissant)
+    limit: int = Query(10, gt=0),        # Nombre max de résultats à afficher (pagination)
+    offset: int = Query(0, ge=0)         # Décalage pour la pagination
+):
+    """
+    API GET universelle pour récupérer des données depuis une base SQLite.
+    - `table` : Nom de la table (ex: "users", "anomalies").
+    - `filter_column` : Colonne pour appliquer un filtre.
+    - `filter_value` : Valeur du filtre.
+    - `sort_by` : Colonne de tri.
+    - `order` : "asc" pour croissant, "desc" pour décroissant.
+    - `limit` : Nombre max de résultats.
+    - `offset` : Décalage pour la pagination.
+    """
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+
+        # Base de la requête SQL
+        query = f"SELECT * FROM {table}"
+        params = []
+
+        # Ajout d'un filtre si spécifié
+        if filter_column and filter_value:
+            query += f" WHERE {filter_column} = ?"
+            params.append(filter_value)
+
+        # Ajout du tri si spécifié
+        if sort_by:
+            query += f" ORDER BY {sort_by} {order.upper()}"
+
+        # Ajout de la pagination
+        query += " LIMIT ? OFFSET ?"
+        params.extend([limit, offset])
+
+        cursor.execute(query, params)
+        results = cursor.fetchall()
+
+        conn.close()
+        return {"table": table, "data": results}
+
+    except Exception as e:
+        return {"error": str(e)}
+
+
 class NetworkConnection(BaseModel):
     duration: float
     protocol_type: str
@@ -99,78 +231,13 @@ class NetworkConnection(BaseModel):
     teardrop: int
     warezclient: int
     warezmaster: int
-    label: str  # Normal ou attaque spécifique
+    label: str
 
-def preprocess_data(data: dict):
-    """
-    Prépare les données pour le modèle IA :
-    - Convertit les catégories en valeurs numériques
-    - Normalise les valeurs si nécessaire
-    """
-    protocol_map = {"tcp": 0, "udp": 1, "icmp": 2}
-    service_map = {"http": 0, "ftp": 1, "smtp": 2, "dns": 3, "other": 4}
-    flag_map = {"SF": 0, "REJ": 1, "S0": 2, "RSTO": 3, "OTH": 4}
+# ------------------------ 5️⃣ 🚀 DÉMARRAGE AUTOMATIQUE AVEC MULTITHREADING ------------------------
 
-    processed_data = {
-        "duration": data["duration"],
-        "protocol_type": protocol_map.get(data["protocol_type"], -1),
-        "service": service_map.get(data["service"], -1),
-        "flag": flag_map.get(data["flag"], -1),
-        "src_bytes": data["src_bytes"],
-        "dst_bytes": data["dst_bytes"],
-        "count": data["count"],
-        "serror_rate": data["serror_rate"],
-        "rerror_rate": data["rerror_rate"],
-        "same_srv_rate": data["same_srv_rate"],
-    }
 
-    # Ajouter les colonnes spécifiques (back, buffer_overflow, etc.)
-    attack_labels = [
-        "back", "buffer_overflow", "ftp_write", "guess_passwd", "imap", "ipsweep", "land", "loadmodule", 
-        "multihop", "neptune", "nmap", "normal", "perl", "phf", "pod", "portsweep", "rootkit", "satan", 
-        "smurf", "spy", "teardrop", "warezclient", "warezmaster"
-    ]
-    
-    for label in attack_labels:
-        processed_data[label] = data[label]
-
-    return pd.DataFrame([processed_data])
-
-@app.post("/send_data")
-async def receive_data(connection: NetworkConnection):
-    """Reçoit les données brutes, les prétraite, les stocke en BDD et les envoie au modèle ML."""
-    log_entry = connection.dict()
-    log_entry["timestamp"] = datetime.utcnow().isoformat()
-
-    # Prétraitement
-    processed_df = preprocess_data(log_entry)
-
-    # Prédiction avec le modèle ML
-    anomaly_prediction = model.predict(processed_df)[0]  
-    log_entry["anomaly"] = int(anomaly_prediction)
-
-    # Sauvegarde en BDD
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("""
-        INSERT INTO connections 
-        (timestamp, duration, protocol_type, service, flag, src_bytes, dst_bytes, count, serror_rate, 
-         rerror_rate, same_srv_rate, back, buffer_overflow, ftp_write, guess_passwd, imap, ipsweep, land, 
-         loadmodule, multihop, neptune, nmap, normal, perl, phf, pod, portsweep, rootkit, satan, smurf, spy, 
-         teardrop, warezclient, warezmaster, label, anomaly)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        log_entry["timestamp"], log_entry["duration"], log_entry["protocol_type"], log_entry["service"], 
-        log_entry["flag"], log_entry["src_bytes"], log_entry["dst_bytes"], log_entry["count"], 
-        log_entry["serror_rate"], log_entry["rerror_rate"], log_entry["same_srv_rate"],
-        log_entry["back"], log_entry["buffer_overflow"], log_entry["ftp_write"], log_entry["guess_passwd"],
-        log_entry["imap"], log_entry["ipsweep"], log_entry["land"], log_entry["loadmodule"], log_entry["multihop"],
-        log_entry["neptune"], log_entry["nmap"], log_entry["normal"], log_entry["perl"], log_entry["phf"],
-        log_entry["pod"], log_entry["portsweep"], log_entry["rootkit"], log_entry["satan"], log_entry["smurf"],
-        log_entry["spy"], log_entry["teardrop"], log_entry["warezclient"], log_entry["warezmaster"],
-        log_entry["label"], log_entry["anomaly"]
-    ))
-    conn.commit()
-    conn.close()
-
-    return {"message": "Données traitées et stockées", "data": log_entry}
+if __name__ == "__main__":
+    thread = threading.Thread(target=watch_and_process, daemon=True)
+    thread.start()
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
