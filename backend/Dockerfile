@@ -4,7 +4,7 @@ FROM python:3.9-slim
 # Définissez le répertoire de travail
 WORKDIR /app
 
-# Copiez le fichier requirements.txt dans le répertoire de travail
+# Copiez le fichier requirements.txt dans le répertoire de backend
 COPY ./backend/requirements.txt .
 
 # Installez les dépendances

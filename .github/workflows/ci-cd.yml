@@ -17,6 +17,11 @@ jobs:
             password: ${{ secrets.AZURE_CLIENT_SECRET }} 
             tenant: ${{ secrets.AZURE_TENANT_ID }}
 
+      - name: Login to Azure Container Registry (ACR)
+        run: |
+          az acr login --name monregistres
+
+
       - name: Build & Push Backend
         run: |
           docker build -t monregistry.azurecr.io/backend:latest -f backend/Dockerfile .
