@@ -3,6 +3,7 @@ import pandas as pd
 import joblib
 
 REFERENCE_COLUMNS_PATH = "reference_columns.pkl"
+REFERENCE_COLUMNS_POST_PROCESSING_PATH = "reference_columns_post_processing.pkl"
 
 
 def preprocess_data(df):
@@ -12,6 +13,7 @@ def preprocess_data(df):
     - Ajoute les colonnes manquantes (remplies avec des 0) via `concat()`
     - Supprime les colonnes en trop pour correspondre exactement aux 54 colonnes attendues
     - Convertit les booléens "VRAI"/"FAUX" en 1/0
+    - Ajoute les colonnes absentes après traitement avec des valeurs 0
     - Retourne un DataFrame final avec les 54 colonnes attendues
     """
 
@@ -34,29 +36,24 @@ def preprocess_data(df):
     # Convertir "VRAI"/"FAUX" en 1/0
     df_encoded = df_encoded.replace({"VRAI": 1, "FAUX": 0})
 
-    # Vérifier les colonnes après encodage
-    missing_cols = list(set(reference_columns) - set(df_encoded.columns))
-    extra_cols = list(set(df_encoded.columns) - set(reference_columns))
+    # Charger les colonnes attendues après traitement
+    reference_columns_post_processing = joblib.load(REFERENCE_COLUMNS_POST_PROCESSING_PATH)
 
-    # Supprimer les colonnes en trop
-    if extra_cols:
-        print(f"⚠️ Suppression de {len(extra_cols)} colonnes en trop : {extra_cols}")
-        df_encoded = df_encoded.drop(columns=extra_cols)
-
-    # Ajouter les colonnes manquantes avec des 0 via `concat()`
+    # Ajouter les colonnes manquantes avec des 0
+    missing_cols = list(set(reference_columns_post_processing) - set(df_encoded.columns))
     if missing_cols:
-        print(f"➕ Ajout de {len(missing_cols)} colonnes manquantes : {missing_cols}")
+        print(f"➕ Ajout de {len(missing_cols)} colonnes manquantes après traitement : {missing_cols}")
         missing_df = pd.DataFrame(0, index=df_encoded.index, columns=missing_cols)
         df_encoded = pd.concat([df_encoded, missing_df], axis=1)
 
     # Forcer le bon ordre des colonnes
-    df_encoded = df_encoded[reference_columns]
+    df_encoded = df_encoded[reference_columns_post_processing]
 
     # Vérification finale du nombre de colonnes
-    if df_encoded.shape[1] != len(reference_columns):
-        print(f"❌ ERREUR : {df_encoded.shape[1]} colonnes générées, mais {len(reference_columns)} attendues !")
+    if df_encoded.shape[1] != len(reference_columns_post_processing):
+        print(f"❌ ERREUR : {df_encoded.shape[1]} colonnes générées, mais {len(reference_columns_post_processing)} attendues !")
         return None
 
-    print(f"✅ Colonnes après correction : {df_encoded.shape[1]} colonnes (Attendu : {len(reference_columns)})")
+    print(f"✅ Colonnes après correction : {df_encoded.shape[1]} colonnes (Attendu : {len(reference_columns_post_processing)})")
 
     return df_encoded

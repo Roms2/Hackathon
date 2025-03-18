@@ -27,73 +27,145 @@ WATCHED_FOLDER = "watched_folder/"
 def init_db():
     """
     Initialise la base de données SQLite en créant la table `connections` si elle n’existe pas.
+    Vérifie que la structure correspond bien aux 118 colonnes attendues.
     """
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
 
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS connections (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp TEXT,
-            duration REAL,
-            src_bytes INTEGER,
-            dst_bytes INTEGER,
-            land INTEGER,
-            wrong_fragment INTEGER,
-            urgent INTEGER,
-            hot INTEGER,
-            num_failed_logins INTEGER,
-            logged_in INTEGER,
-            num_compromised INTEGER,
-            root_shell INTEGER,
-            su_attempted INTEGER,
-            num_root INTEGER,
-            num_file_creations INTEGER,
-            num_shells INTEGER,
-            num_access_files INTEGER,
-            num_outbound_cmds INTEGER,
-            is_host_login INTEGER,
-            is_guest_login INTEGER,
-            count INTEGER,
-            srv_count INTEGER,
-            serror_rate REAL,
-            srv_serror_rate REAL,
-            rerror_rate REAL,
-            srv_rerror_rate REAL,
-            same_srv_rate REAL,
-            diff_srv_rate REAL,
-            srv_diff_host_rate REAL,
-            dst_host_count INTEGER,
-            dst_host_srv_count INTEGER,
-            dst_host_same_srv_rate REAL,
-            dst_host_diff_srv_rate REAL,
-            dst_host_same_src_port_rate REAL,
-            dst_host_srv_diff_host_rate REAL,
-            dst_host_serror_rate REAL,
-            dst_host_srv_serror_rate REAL,
-            dst_host_rerror_rate REAL,
-            dst_host_srv_rerror_rate REAL,
-            protocol_type_icmp INTEGER,
-            protocol_type_tcp INTEGER,
-            protocol_type_udp INTEGER,
-            flag_OTH INTEGER,
-            flag_REJ INTEGER,
-            flag_RSTO INTEGER,
-            flag_RSTOS0 INTEGER,
-            flag_RSTR INTEGER,
-            flag_S0 INTEGER,
-            flag_S1 INTEGER,
-            flag_S2 INTEGER,
-            flag_S3 INTEGER,
-            flag_SF INTEGER,
-            flag_SH INTEGER,
-            label TEXT
-        )
-    """)
-    conn.commit()
-    conn.close()
+        # Création de la table avec les 117 colonnes + timestamp
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS connections (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT,
+                duration REAL,
+                src_bytes INTEGER,
+                dst_bytes INTEGER,
+                land INTEGER,
+                wrong_fragment INTEGER,
+                urgent INTEGER,
+                hot INTEGER,
+                num_failed_logins INTEGER,
+                logged_in INTEGER,
+                num_compromised INTEGER,
+                root_shell INTEGER,
+                su_attempted INTEGER,
+                num_root INTEGER,
+                num_file_creations INTEGER,
+                num_shells INTEGER,
+                num_access_files INTEGER,
+                num_outbound_cmds INTEGER,
+                is_host_login INTEGER,
+                is_guest_login INTEGER,
+                count INTEGER,
+                srv_count INTEGER,
+                serror_rate REAL,
+                srv_serror_rate REAL,
+                rerror_rate REAL,
+                srv_rerror_rate REAL,
+                same_srv_rate REAL,
+                diff_srv_rate REAL,
+                srv_diff_host_rate REAL,
+                dst_host_count INTEGER,
+                dst_host_srv_count INTEGER,
+                dst_host_same_srv_rate REAL,
+                dst_host_diff_srv_rate REAL,
+                dst_host_same_src_port_rate REAL,
+                dst_host_srv_diff_host_rate REAL,
+                dst_host_serror_rate REAL,
+                dst_host_srv_serror_rate REAL,
+                dst_host_rerror_rate REAL,
+                dst_host_srv_rerror_rate REAL,
+                protocol_type_icmp INTEGER,
+                protocol_type_tcp INTEGER,
+                protocol_type_udp INTEGER,
+                service_IRC INTEGER,
+                service_X11 INTEGER,
+                service_Z39_50 INTEGER,
+                service_auth INTEGER,
+                service_bgp INTEGER,
+                service_courier INTEGER,
+                service_csnet_ns INTEGER,
+                service_ctf INTEGER,
+                service_daytime INTEGER,
+                service_discard INTEGER,
+                service_domain INTEGER,
+                service_domain_u INTEGER,
+                service_echo INTEGER,
+                service_eco_i INTEGER,
+                service_ecr_i INTEGER,
+                service_efs INTEGER,
+                service_exec INTEGER,
+                service_finger INTEGER,
+                service_ftp INTEGER,
+                service_ftp_data INTEGER,
+                service_gopher INTEGER,
+                service_hostnames INTEGER,
+                service_http INTEGER,
+                service_http_443 INTEGER,
+                service_imap4 INTEGER,
+                service_iso_tsap INTEGER,
+                service_klogin INTEGER,
+                service_kshell INTEGER,
+                service_ldap INTEGER,
+                service_link INTEGER,
+                service_login INTEGER,
+                service_mtp INTEGER,
+                service_name INTEGER,
+                service_netbios_dgm INTEGER,
+                service_netbios_ns INTEGER,
+                service_netbios_ssn INTEGER,
+                service_netstat INTEGER,
+                service_nnsp INTEGER,
+                service_nntp INTEGER,
+                service_ntp_u INTEGER,
+                service_other INTEGER,
+                service_pm_dump INTEGER,
+                service_pop_2 INTEGER,
+                service_pop_3 INTEGER,
+                service_printer INTEGER,
+                service_private INTEGER,
+                service_remote_job INTEGER,
+                service_rje INTEGER,
+                service_shell INTEGER,
+                service_smtp INTEGER,
+                service_sql_net INTEGER,
+                service_ssh INTEGER,
+                service_sunrpc INTEGER,
+                service_supdup INTEGER,
+                service_systat INTEGER,
+                service_telnet INTEGER,
+                service_time INTEGER,
+                service_urp_i INTEGER,
+                service_uucp INTEGER,
+                service_uucp_path INTEGER,
+                service_vmnet INTEGER,
+                service_whois INTEGER,
+                flag_OTH INTEGER,
+                flag_REJ INTEGER,
+                flag_RSTO INTEGER,
+                flag_RSTOS0 INTEGER,
+                flag_RSTR INTEGER,
+                flag_S0 INTEGER,
+                flag_S1 INTEGER,
+                flag_S2 INTEGER,
+                flag_S3 INTEGER,
+                flag_SF INTEGER,
+                flag_SH INTEGER
+            )
+        """)
 
-init_db()  # Initialisation au démarrage
+        conn.commit()
+        print("✅ Table 'connections' initialisée avec succès.")
+    
+    except Exception as e:
+        print(f"❌ Erreur lors de l'initialisation de la base de données : {e}")
+
+    finally:
+        conn.close()
+
+# Lancer l'initialisation au démarrage
+init_db()
 
 
 # ------------------------ 3️⃣ 👀 SURVEILLANCE TEMPS RÉEL ------------------------
@@ -136,16 +208,16 @@ def watch_and_process():
                     print(f"⚠️ Fichier ignoré, nombre de colonnes incorrect ({df_raw.shape[1]} colonnes trouvées, 43 attendues).")
                     os.remove(file_path)  # Supprimer le fichier invalide
                     continue
-                print(f"📝 Données brutes avant preprocessing: {df_raw.shape}")
-                print(df_raw.head())  # Affiche les 5 premières lignes
+                print(f"📝 Données brutes avant preprocessing: {df_raw.shape}", flush=True)
+                print(df_raw.head(), flush=True)  # Affiche les 5 premières lignes
 
                 # Envoyer toutes les lignes à preprocess_data() en une seule fois
                 df_processed = preprocess_data(df_raw)
 
                 # Vérifier le nombre de colonnes après preprocessing
-                expected_columns = 54
+                expected_columns = 117
                 if df_processed.shape[1] != expected_columns:
-                    print(f"⚠️ Erreur après preprocessing : {df_processed.shape[1]} colonnes trouvées, {expected_columns} attendues.")
+                    print(f"⚠️ Erreur après preprocessing : {df_processed.shape[1]} colonnes trouvées, {expected_columns} attendues.", flush=True)
                     os.remove(file_path)
                     continue
                 
@@ -160,41 +232,55 @@ def watch_and_process():
                 try:
                     cursor.executemany("""
                         INSERT INTO connections 
-                        (timestamp, duration, src_bytes, dst_bytes, land, wrong_fragment, urgent, hot, num_failed_logins, 
-                        logged_in, num_compromised, root_shell, su_attempted, num_root, num_file_creations, num_shells, 
-                        num_access_files, num_outbound_cmds, is_host_login, is_guest_login, count, srv_count, serror_rate, 
-                        srv_serror_rate, rerror_rate, srv_rerror_rate, same_srv_rate, diff_srv_rate, srv_diff_host_rate, 
-                        dst_host_count, dst_host_srv_count, dst_host_same_srv_rate, dst_host_diff_srv_rate, dst_host_same_src_port_rate, 
-                        dst_host_srv_diff_host_rate, dst_host_serror_rate, dst_host_srv_serror_rate, dst_host_rerror_rate, dst_host_srv_rerror_rate, 
-                        protocol_type_icmp, protocol_type_tcp, protocol_type_udp, flag_OTH, flag_REJ, flag_RSTO, flag_RSTOS0, 
-                        flag_RSTR, flag_S0, flag_S1, flag_S2, flag_S3, flag_SF, flag_SH, label) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        (timestamp, duration, src_bytes, dst_bytes, land, wrong_fragment, urgent, hot, 
+                        num_failed_logins, logged_in, num_compromised, root_shell, su_attempted, num_root, 
+                        num_file_creations, num_shells, num_access_files, num_outbound_cmds, is_host_login, 
+                        is_guest_login, count, srv_count, serror_rate, srv_serror_rate, rerror_rate, 
+                        srv_rerror_rate, same_srv_rate, diff_srv_rate, srv_diff_host_rate, dst_host_count, 
+                        dst_host_srv_count, dst_host_same_srv_rate, dst_host_diff_srv_rate, 
+                        dst_host_same_src_port_rate, dst_host_srv_diff_host_rate, dst_host_serror_rate, 
+                        dst_host_srv_serror_rate, dst_host_rerror_rate, dst_host_srv_rerror_rate, 
+                        protocol_type_icmp, protocol_type_tcp, protocol_type_udp, service_IRC, service_X11, 
+                        service_Z39_50, service_auth, service_bgp, service_courier, service_csnet_ns, 
+                        service_ctf, service_daytime, service_discard, service_domain, service_domain_u, 
+                        service_echo, service_eco_i, service_ecr_i, service_efs, service_exec, service_finger, 
+                        service_ftp, service_ftp_data, service_gopher, service_hostnames, service_http, 
+                        service_http_443, service_imap4, service_iso_tsap, service_klogin, service_kshell, 
+                        service_ldap, service_link, service_login, service_mtp, service_name, service_netbios_dgm, 
+                        service_netbios_ns, service_netbios_ssn, service_netstat, service_nnsp, service_nntp, 
+                        service_ntp_u, service_other, service_pm_dump, service_pop_2, service_pop_3, service_printer, 
+                        service_private, service_remote_job, service_rje, service_shell, service_smtp, 
+                        service_sql_net, service_ssh, service_sunrpc, service_supdup, service_systat, 
+                        service_telnet, service_time, service_urp_i, service_uucp, service_uucp_path, 
+                        service_vmnet, service_whois, flag_OTH, flag_REJ, flag_RSTO, flag_RSTOS0, flag_RSTR, 
+                        flag_S0, flag_S1, flag_S2, flag_S3, flag_SF, flag_SH) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, df_processed.values.tolist())
 
                     # Valider la transaction
                     conn.commit()
-                    print(f"✅ {len(df_processed)} lignes insérées en BDD")
+                    print(f"✅ {len(df_processed)} lignes insérées en BDD", flush=True)
 
                     # Vérifier combien de lignes sont en base après insertion
                     cursor.execute("SELECT COUNT(*) FROM connections")
                     count = cursor.fetchone()[0]
-                    print(f"📊 Nombre total d'entrées en BDD après insertion: {count}")
+                    print(f"📊 Nombre total d'entrées en BDD après insertion: {count}", flush=True)
 
                 except Exception as e:
-                    print(f"❌ Erreur lors de l'insertion SQL: {e}")
+                    print(f"❌ Erreur lors de l'insertion SQL: {e}", flush=True)
                 
                 finally:
                     conn.close()  # Toujours fermer la connexion à la BDD
 
                 # Supprimer le fichier après traitement
                 os.remove(file_path)
-                print(f"🗑️ Fichier supprimé : {latest_file}")
+                print(f"🗑️ Fichier supprimé : {latest_file}", flush=True)
 
             # Pause avant la prochaine vérification
             time.sleep(3)  # Vérifie toutes les 5 secondes
 
         except Exception as e:
-            print(f"⚠️ Erreur dans la surveillance du dossier : {e}")
+            print(f"⚠️ Erreur dans la surveillance du dossier : {e}", flush=True)
             time.sleep(3)  # Pause pour éviter une boucle d'erreur infinie
 
 
