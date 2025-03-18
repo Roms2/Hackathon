@@ -102,6 +102,6 @@ def update_visuals(stored_data):
     return fig, df.to_dict("records")
 
 # Lancement du serveur Dash
-# if __name__ == '__main__':
-#     app.run_server(host='0.0.0.0', port=8051, debug=True)
+if __name__ == '__main__':
+    app.run_server(host='0.0.0.0', port=8051, debug=True)
 

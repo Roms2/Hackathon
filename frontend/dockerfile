@@ -10,4 +10,4 @@ COPY . .
 
 EXPOSE 8051
 
-CMD ["python", "app_mock.py", "--server.port=8051", "--server.address=127.0.0.1"]
+CMD ["python", "app.py", "--server.port=8051", "--server.address=127.0.0.1"]
