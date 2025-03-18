@@ -28,45 +28,64 @@ def init_db():
     """
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
+
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS connections (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             timestamp TEXT,
             duration REAL,
-            protocol_type TEXT,
-            service TEXT,
-            flag TEXT,
             src_bytes INTEGER,
             dst_bytes INTEGER,
-            count INTEGER,
-            serror_rate REAL,
-            rerror_rate REAL,
-            same_srv_rate REAL,
-            back INTEGER,
-            buffer_overflow INTEGER,
-            ftp_write INTEGER,
-            guess_passwd INTEGER,
-            imap INTEGER,
-            ipsweep INTEGER,
             land INTEGER,
-            loadmodule INTEGER,
-            multihop INTEGER,
-            neptune INTEGER,
-            nmap INTEGER,
-            normal INTEGER,
-            perl INTEGER,
-            phf INTEGER,
-            pod INTEGER,
-            portsweep INTEGER,
-            rootkit INTEGER,
-            satan INTEGER,
-            smurf INTEGER,
-            spy INTEGER,
-            teardrop INTEGER,
-            warezclient INTEGER,
-            warezmaster INTEGER,
-            label TEXT,
-            anomaly INTEGER
+            wrong_fragment INTEGER,
+            urgent INTEGER,
+            hot INTEGER,
+            num_failed_logins INTEGER,
+            logged_in INTEGER,
+            num_compromised INTEGER,
+            root_shell INTEGER,
+            su_attempted INTEGER,
+            num_root INTEGER,
+            num_file_creations INTEGER,
+            num_shells INTEGER,
+            num_access_files INTEGER,
+            num_outbound_cmds INTEGER,
+            is_host_login INTEGER,
+            is_guest_login INTEGER,
+            count INTEGER,
+            srv_count INTEGER,
+            serror_rate REAL,
+            srv_serror_rate REAL,
+            rerror_rate REAL,
+            srv_rerror_rate REAL,
+            same_srv_rate REAL,
+            diff_srv_rate REAL,
+            srv_diff_host_rate REAL,
+            dst_host_count INTEGER,
+            dst_host_srv_count INTEGER,
+            dst_host_same_srv_rate REAL,
+            dst_host_diff_srv_rate REAL,
+            dst_host_same_src_port_rate REAL,
+            dst_host_srv_diff_host_rate REAL,
+            dst_host_serror_rate REAL,
+            dst_host_srv_serror_rate REAL,
+            dst_host_rerror_rate REAL,
+            dst_host_srv_rerror_rate REAL,
+            protocol_type_icmp INTEGER,
+            protocol_type_tcp INTEGER,
+            protocol_type_udp INTEGER,
+            flag_OTH INTEGER,
+            flag_REJ INTEGER,
+            flag_RSTO INTEGER,
+            flag_RSTOS0 INTEGER,
+            flag_RSTR INTEGER,
+            flag_S0 INTEGER,
+            flag_S1 INTEGER,
+            flag_S2 INTEGER,
+            flag_S3 INTEGER,
+            flag_SF INTEGER,
+            flag_SH INTEGER,
+            label TEXT
         )
     """)
     conn.commit()
@@ -96,31 +115,93 @@ def watch_and_process():
                 print(f"📂 Nouvelle alerte détectée : {latest_file}")
                 # Charger le fichier en DataFrame 
                 df = pd.read_csv(file_path, delimiter=",")  # Adapter le délimiteur si nécessaire
-                processed_data = preprocess_data(df)  # Envoyer le DataFrame à process_file()
+                #processed_data = preprocess_data(df)  # Envoyer le DataFrame à process_file()
+                processed_data = [
+                    0, 0.0, 215, 45076, "FAUX", 0, 0, 0, 0, "VRAI", 0, 0, 0, 0, 0, 0, 0, 0, "FAUX", "VRAI", 
+                    1, 1, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
+                    "FAUX", "VRAI", "FAUX", "FAUX", "FAUX", "FAUX", "FAUX", "FAUX", "FAUX", "FAUX", "FAUX", "FAUX", "FAUX", "normal"
+                ]
                 # Traiter le fichier avec la fonction process_file() (retourne un dataframe ou une liste de tuples)
-                
                 if processed_data:
                     # Connexion à la base de données
                     conn = sqlite3.connect(DB_PATH)
                     cursor = conn.cursor()
-                    
-                    # Insérer chaque ligne de données traitées dans la BDD
-                    if isinstance(processed_data, list):  # Vérifie que les données sont bien sous forme de liste unique
+
+                    # Vérifier que processed_data est bien sous forme de liste de valeurs
+                    if isinstance(processed_data, list):
                         cursor.execute("""
                             INSERT INTO connections 
-                            (timestamp, duration, protocol_type, service, flag, src_bytes, dst_bytes, count, serror_rate, 
-                            rerror_rate, same_srv_rate, back, buffer_overflow, ftp_write, guess_passwd, imap, ipsweep, land, 
-                            loadmodule, multihop, neptune, nmap, normal, perl, phf, pod, portsweep, rootkit, satan, smurf, spy, 
-                            teardrop, warezclient, warezmaster, label, anomaly)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            (timestamp, duration, src_bytes, dst_bytes, land, wrong_fragment, urgent, hot, num_failed_logins, 
+                            logged_in, num_compromised, root_shell, su_attempted, num_root, num_file_creations, num_shells, 
+                            num_access_files, num_outbound_cmds, is_host_login, is_guest_login, count, srv_count, serror_rate, 
+                            srv_serror_rate, rerror_rate, srv_rerror_rate, same_srv_rate, diff_srv_rate, srv_diff_host_rate, 
+                            dst_host_count, dst_host_srv_count, dst_host_same_srv_rate, dst_host_diff_srv_rate, dst_host_same_src_port_rate, 
+                            dst_host_srv_diff_host_rate, dst_host_serror_rate, dst_host_srv_serror_rate, dst_host_rerror_rate, dst_host_srv_rerror_rate, 
+                            protocol_type_icmp, protocol_type_tcp, protocol_type_udp, flag_OTH, flag_REJ, flag_RSTO, flag_RSTOS0, 
+                            flag_RSTR, flag_S0, flag_S1, flag_S2, flag_S3, flag_SF, flag_SH, label) 
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """, (
-                            datetime.utcnow().isoformat(),  # Timestamp
-                            *processed_data  # Insère directement la seule ligne de données
+                            datetime.utcnow().isoformat(),  # Ajout du timestamp automatique
+                            processed_data[1],  # duration
+                            processed_data[2],  # src_bytes
+                            processed_data[3],  # dst_bytes
+                            int(processed_data[4] == "VRAI"),  # land
+                            processed_data[5],  # wrong_fragment
+                            processed_data[6],  # urgent
+                            processed_data[7],  # hot
+                            processed_data[8],  # num_failed_logins
+                            int(processed_data[9] == "VRAI"),  # logged_in
+                            processed_data[10],  # num_compromised
+                            processed_data[11],  # root_shell
+                            processed_data[12],  # su_attempted
+                            processed_data[13],  # num_root
+                            processed_data[14],  # num_file_creations
+                            processed_data[15],  # num_shells
+                            processed_data[16],  # num_access_files
+                            processed_data[17],  # num_outbound_cmds
+                            int(processed_data[18] == "VRAI"),  # is_host_login
+                            int(processed_data[19] == "VRAI"),  # is_guest_login
+                            processed_data[20],  # count
+                            processed_data[21],  # srv_count
+                            processed_data[22],  # serror_rate
+                            processed_data[23],  # srv_serror_rate
+                            processed_data[24],  # rerror_rate
+                            processed_data[25],  # srv_rerror_rate
+                            processed_data[26],  # same_srv_rate
+                            processed_data[27],  # diff_srv_rate
+                            processed_data[28],  # srv_diff_host_rate
+                            processed_data[29],  # dst_host_count
+                            processed_data[30],  # dst_host_srv_count
+                            processed_data[31],  # dst_host_same_srv_rate
+                            processed_data[32],  # dst_host_diff_srv_rate
+                            processed_data[33],  # dst_host_same_src_port_rate
+                            processed_data[34],  # dst_host_srv_diff_host_rate
+                            processed_data[35],  # dst_host_serror_rate
+                            processed_data[36],  # dst_host_srv_serror_rate
+                            processed_data[37],  # dst_host_rerror_rate
+                            processed_data[38],  # dst_host_srv_rerror_rate
+                            int(processed_data[39] == "VRAI"),  # protocol_type_icmp
+                            int(processed_data[40] == "VRAI"),  # protocol_type_tcp
+                            int(processed_data[41] == "VRAI"),  # protocol_type_udp
+                            int(processed_data[42] == "VRAI"),  # flag_OTH
+                            int(processed_data[43] == "VRAI"),  # flag_REJ
+                            int(processed_data[44] == "VRAI"),  # flag_RSTO
+                            int(processed_data[45] == "VRAI"),  # flag_RSTOS0
+                            int(processed_data[46] == "VRAI"),  # flag_RSTR
+                            int(processed_data[47] == "VRAI"),  # flag_S0
+                            int(processed_data[48] == "VRAI"),  # flag_S1
+                            int(processed_data[49] == "VRAI"),  # flag_S2
+                            int(processed_data[50] == "VRAI"),  # flag_S3
+                            int(processed_data[51] == "VRAI"),  # flag_SF
+                            int(processed_data[52] == "VRAI"),  # flag_SH
+                            processed_data[53]  # label
                         ))
 
                     conn.commit()
                     conn.close()
-                    print(f"✅ Données de {latest_file} insérées en BDD")
+                    print("✅ Données insérées en BDD")
+
+
 
 
                 # Supprimer le fichier après traitement
