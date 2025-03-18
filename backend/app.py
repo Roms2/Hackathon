@@ -13,7 +13,7 @@ import sys
 
 DB_PATH = "/app/network_traffic.db"  # 🔹 Assurez-vous que ce chemin est correct !
 MODEL_PATH = "model.pkl"
-WATCHED_FOLDER = "/backend/watched_folder"
+WATCHED_FOLDER = "/app/watched_folder"
 
 # Charger le modèle ML
 model = joblib.load(MODEL_PATH)
