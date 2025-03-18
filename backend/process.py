@@ -32,7 +32,13 @@ def preprocess_data(df):
         df_encoded['label'] = 'défault'
 
     # 🔹 Réorganiser les colonnes dans le bon ordre
-    df_encoded = df_encoded[reference_columns + ['label']]
+    # S'assurer que les colonnes de référence sont une liste triée
+    reference_columns = list(reference_columns)  # Conversion en liste si c'est un set
+
+    # Réorganiser les colonnes dans l'ordre de référence
+    df_encoded = df_encoded[reference_columns]
+    df_encoded["label"] = "labels"
+
 
     return df_encoded
 
