@@ -4,6 +4,7 @@ import joblib
 
 REFERENCE_COLUMNS_PATH = "reference_columns.pkl"
 
+
 def preprocess_data(df):
     """
     Prétraite les données brutes pour qu'elles correspondent aux attentes du modèle :
@@ -23,7 +24,7 @@ def preprocess_data(df):
         print(f"⚠️ Erreur : {df.shape[1]} colonnes trouvées au lieu de {expected_raw_columns}. Fichier ignoré.")
         return None  # Retourne `None` pour éviter de traiter un mauvais fichier
 
-    # Ajout temporaire d'un header pour éviter les erreurs avec `get_dummies`
+    # Assigner des noms de colonnes génériques (les données sont supposées toujours dans le bon ordre)
     df.columns = [f"col_{i}" for i in range(df.shape[1])]
 
     # Appliquer One-Hot Encoding
@@ -36,18 +37,18 @@ def preprocess_data(df):
     missing_cols = list(set(reference_columns) - set(df_encoded.columns))
     extra_cols = list(set(df_encoded.columns) - set(reference_columns))
 
-    # **Supprimer les colonnes en trop**
+    # Supprimer les colonnes en trop
     if extra_cols:
         print(f"⚠️ Suppression de {len(extra_cols)} colonnes en trop : {extra_cols}")
         df_encoded = df_encoded.drop(columns=extra_cols)
 
-    # **Ajouter les colonnes manquantes avec des 0 via `concat()` pour éviter la fragmentation**
+    # Ajouter les colonnes manquantes avec des 0 via `concat()`
     if missing_cols:
         print(f"➕ Ajout de {len(missing_cols)} colonnes manquantes : {missing_cols}")
         missing_df = pd.DataFrame(0, index=df_encoded.index, columns=missing_cols)
         df_encoded = pd.concat([df_encoded, missing_df], axis=1)
 
-    # **Forcer le bon ordre des colonnes**
+    # Forcer le bon ordre des colonnes
     df_encoded = df_encoded[reference_columns]
 
     # Vérification finale du nombre de colonnes
