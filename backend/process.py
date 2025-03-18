@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import joblib
 
-def preprocess_data(df, scaler_path="scaler.pkl", reference_columns_path="reference_columns.pkl"):
+def preprocess_data(df,reference_columns_path="reference_columns.pkl"):
     """
     Effectue le prétraitement des données pour la prédiction :
     - Applique One-Hot Encoding avec des colonnes fixes (celles de l'entraînement)
@@ -28,9 +28,7 @@ def preprocess_data(df, scaler_path="scaler.pkl", reference_columns_path="refere
     # Réorganiser les colonnes dans le même ordre que lors de l'entraînement
     df_encoded = df_encoded[reference_columns]
 
-    # Charger le scaler pré-enregistré
-    scaler = joblib.load(scaler_path)
-    df_scaled = scaler.transform(df_encoded)
+
 
     # Retourner un DataFrame normalisé
-    return pd.DataFrame(df_scaled, columns=reference_columns)
+    return pd.DataFrame(df_encoded, columns=reference_columns)
