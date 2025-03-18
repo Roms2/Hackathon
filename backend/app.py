@@ -8,6 +8,8 @@ import os
 import time
 import threading
 from process import preprocess_data  # Fonction qui traite le fichier et retourne les données
+import sys
+
 
 
 # ------------------------ 1️⃣ 🚀 INITIALISATION VARIABLES ------------------------
@@ -121,14 +123,16 @@ def watch_and_process():
                 latest_file = min(files, key=lambda f: os.path.getctime(os.path.join(WATCHED_FOLDER, f)))
                 file_path = os.path.join(WATCHED_FOLDER, latest_file)
                 
-                print(f"📂 Nouvelle alerte détectée : {latest_file}")
+                
+                print(f"📂 Nouvelle alerte détectée : {latest_file}", flush=True)  # Forcer l'affichage du log immédiatement
+
 
                 # Charger tout le fichier d'un coup dans un DataFrame
                 df_raw = pd.read_csv(file_path, delimiter=",", header=None)  # Adapter le délimiteur si nécessaire
                 print(f"🔍 {len(df_raw)} lignes trouvées dans le fichier")
 
                 # Vérifier que le fichier a bien 43 colonnes
-                if df_raw.shape[1] != 43:  
+                if df_raw.shape[1] < 42:  
                     print(f"⚠️ Fichier ignoré, nombre de colonnes incorrect ({df_raw.shape[1]} colonnes trouvées, 43 attendues).")
                     os.remove(file_path)  # Supprimer le fichier invalide
                     continue
