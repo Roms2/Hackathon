@@ -7,7 +7,7 @@ from datetime import datetime
 import os
 import time
 import threading
-from process import process_file  # Fonction qui traite le fichier et retourne les données
+from process import preprocess_data  # Fonction qui traite le fichier et retourne les données
 
 
 # ------------------------ 1️⃣ 🚀 INITIALISATION VARIABLES ------------------------
