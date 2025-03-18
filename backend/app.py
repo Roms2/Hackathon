@@ -201,6 +201,7 @@ def watch_and_process():
                 print(f"🔢 Nombre de valeurs par ligne : {len(df_processed.values.tolist()[0])}",flush=True)
                 print(f"🧐 Colonnes du DataFrame après preprocessing: {df_processed.columns.tolist()}", flush=True)
                 df_processed.insert(0, "timestamp", datetime.utcnow().isoformat())
+                print(f"🔢 Nombre de valeurs par ligne : {len(df_processed.values.tolist()[0])}",flush=True)
                 print(f"----------🧐 Colonnes du DataFrame après TIMESTAMP:--------- {df_processed.columns.tolist()}", flush=True)
 
 
