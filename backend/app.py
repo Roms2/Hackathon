@@ -129,7 +129,7 @@ def watch_and_process():
 
                 # Charger tout le fichier d'un coup dans un DataFrame
                 df_raw = pd.read_csv(file_path, delimiter=",", header=None)  # Adapter le délimiteur si nécessaire
-                print(f"🔍 {len(df_raw)} lignes trouvées dans le fichier")
+                print(f"🔍 {len(df_raw)} lignes trouvées dans le fichier", flush=True)
 
                 # Vérifier que le fichier a bien 43 colonnes
                 if df_raw.shape[1] < 42:  

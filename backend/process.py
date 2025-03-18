@@ -24,11 +24,11 @@ def preprocess_data(df):
         print(f"⚠️ Erreur : {df.shape[1]} colonnes trouvées au lieu de {expected_raw_columns}. Fichier ignoré.")
         return None  # Retourne `None` pour éviter de traiter un mauvais fichier
 
-    # Assigner des noms de colonnes génériques (les données sont supposées toujours dans le bon ordre)
-    df.columns = [f"col_{i}" for i in range(df.shape[1])]
+    # Assigner les noms de colonnes à partir de reference_columns
+    df.columns = reference_columns[:df.shape[1]]
 
     # Identifier les colonnes à encoder
-    categorical_columns = ["col_2", "col_4"] 
+    categorical_columns = ["protocol_type", "flag"]
     df_encoded = pd.get_dummies(df, columns=categorical_columns)
 
     # Convertir "VRAI"/"FAUX" en 1/0
@@ -60,5 +60,3 @@ def preprocess_data(df):
     print(f"✅ Colonnes après correction : {df_encoded.shape[1]} colonnes (Attendu : {len(reference_columns)})")
 
     return df_encoded
-
-
