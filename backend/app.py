@@ -136,6 +136,8 @@ def watch_and_process():
                     print(f"⚠️ Fichier ignoré, nombre de colonnes incorrect ({df_raw.shape[1]} colonnes trouvées, 43 attendues).")
                     os.remove(file_path)  # Supprimer le fichier invalide
                     continue
+                print(f"📝 Données brutes avant preprocessing: {df_raw.shape}")
+                print(df_raw.head())  # Affiche les 5 premières lignes
 
                 # Envoyer toutes les lignes à preprocess_data() en une seule fois
                 df_processed = preprocess_data(df_raw)

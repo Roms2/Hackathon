@@ -28,5 +28,9 @@ def preprocess_data(df):
     # ✅ Ajouter la colonne "label" s'il manque la dernière colonne
     if "label" not in df_encoded.columns:
         df_encoded["label"] = "unknown"  # Valeur par défaut
+    
+    print(f"🧐 Colonnes après encodage: {df_encoded.shape[1]} colonnes trouvées")
+    print(f"👉 Colonnes présentes: {list(df_encoded.columns)}")
+
 
     return df_encoded
