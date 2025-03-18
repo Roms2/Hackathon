@@ -130,6 +130,8 @@ def init_db():
                 service_supdup INTEGER,
                 service_systat INTEGER,
                 service_telnet INTEGER,
+                service_tftp_u INTEGER,
+                service_tim_i INTEGER,
                 service_time INTEGER,
                 service_urp_i INTEGER,
                 service_uucp INTEGER,
@@ -220,7 +222,7 @@ def watch_and_process():
                         service_ntp_u, service_other, service_pm_dump, service_pop_2, service_pop_3, service_printer, 
                         service_private, service_remote_job, service_rje, service_shell, service_smtp, 
                         service_sql_net, service_ssh, service_sunrpc, service_supdup, service_systat, 
-                        service_telnet, service_time, service_urp_i, service_uucp, service_uucp_path, 
+                        service_telnet,service_tftp_u, service_tim_i, service_time, service_urp_i, service_uucp, service_uucp_path, 
                         service_vmnet, service_whois, flag_OTH, flag_REJ, flag_RSTO, flag_RSTOS0, flag_RSTR, 
                         flag_S0, flag_S1, flag_S2, flag_S3, flag_SF, flag_SH) 
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,? , ?, ?, ?, ?)
