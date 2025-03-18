@@ -16,8 +16,8 @@ jobs:
       - name: Login to Azure Container Registry (ACR)
         with:
             username: ${{ secrets.AZURE_CLIENT_ID }}
-            --password ${{ secrets.AZURE_CLIENT_SECRET }} \
-            --tenant ${{ secrets.AZURE_TENANT_ID }}
+            password: ${{ secrets.AZURE_CLIENT_SECRET }} \
+            tenant: ${{ secrets.AZURE_TENANT_ID }}
 
       - name: Build & Push Backend
         run: |
