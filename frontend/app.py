@@ -15,19 +15,48 @@ app = dash.Dash(__name__)
 app.layout = html.Div([
     html.H1("📡 Surveillance du Réseau & Détection d’Anomalies"),
 
-    # Sélecteur de protocole (Filtre)
-    dcc.Dropdown(
-        id="protocol-filter",
-        options=[{"label": "Tous", "value": "all"},
-                 {"label": "TCP", "value": "TCP"},
-                 {"label": "UDP", "value": "UDP"},
-                 {"label": "ICMP", "value": "ICMP"}],
-        value="all",
-        clearable=False,
-        style={"width": "50%"}
-    ),
+    # Filtres
+    html.Div([
+        html.Label("Filtrer par protocole :"),
+        dcc.Dropdown(
+            id="protocol-filter",
+            options=[
+                {"label": "Tous", "value": "all"},
+                {"label": "TCP", "value": "TCP"},
+                {"label": "UDP", "value": "UDP"},
+                {"label": "ICMP", "value": "ICMP"}
+            ],
+            value="all",
+            clearable=False,
+            style={"width": "30%"}
+        ),
+        
+        html.Label("Filtrer par IP Source :"),
+        dcc.Dropdown(
+            id="source-ip-filter",
+            multi=True,
+            placeholder="Sélectionnez une ou plusieurs IP...",
+            style={"width": "30%"}
+        ),
 
-    # Bouton pour demander les données filtrées
+        html.Label("Filtrer par IP Destination :"),
+        dcc.Dropdown(
+            id="destination-ip-filter",
+            multi=True,
+            placeholder="Sélectionnez une ou plusieurs IP...",
+            style={"width": "30%"}
+        ),
+
+        html.Label("Filtrer par Score d'Anomalie :"),
+        dcc.RangeSlider(
+            id="anomaly-score-filter",
+            min=0, max=1, step=0.01,
+            marks={0: "0", 0.5: "0.5", 1: "1"},
+            value=[0, 1]
+        ),
+    ], style={"display": "flex", "flexWrap": "wrap", "gap": "20px"}),
+
+    # Bouton pour charger les données
     html.Button("🔄 Charger les Données", id="load-data-btn", n_clicks=0),
 
     # Graphique des connexions réseau
@@ -60,14 +89,11 @@ app.layout = html.Div([
 
 # Fonction pour récupérer les données depuis le backend en fonction des filtres
 def fetch_data(protocol):
-    print("🔄 Récupération des données en cours...")  # Log début récupération
-
     try:
         params = {"protocol": protocol} if protocol != "all" else {}
         response = requests.get(API_URL, params=params)
 
         if response.status_code == 200:
-            print("✅ Données chargées avec succès !")  # Log succès
             return pd.DataFrame(response.json())
 
     except Exception as e:
@@ -87,21 +113,50 @@ def store_data(n_clicks, selected_protocol):
     return []
 
 
-# Callback pour mettre à jour les graphiques et le tableau
+# Callback pour mettre à jour les options des filtres IP en fonction des données récupérées
+@app.callback(
+    [Output("source-ip-filter", "options"),
+     Output("destination-ip-filter", "options")],
+    [Input("stored-data", "data")]
+)
+def update_ip_filters(stored_data):
+    df = pd.DataFrame(stored_data)
+    if df.empty:
+        return [], []
+
+    source_ips = [{"label": ip, "value": ip} for ip in df["source_ip"].unique()]
+    destination_ips = [{"label": ip, "value": ip} for ip in df["destination_ip"].unique()]
+    
+    return source_ips, destination_ips
+
+
+# Callback pour mettre à jour les graphiques et le tableau en fonction des filtres
 @app.callback(
     [Output("network-traffic-graph", "figure"),
      Output("log-table", "data"),
      Output("anomaly-histogram", "figure"),
      Output("protocol-pie-chart", "figure"),
      Output("source-ip-bar-chart", "figure")],
-    [Input("stored-data", "data")]
+    [Input("stored-data", "data"),
+     Input("source-ip-filter", "value"),
+     Input("destination-ip-filter", "value"),
+     Input("anomaly-score-filter", "value")]
 )
-def update_visuals(stored_data):
+def update_visuals(stored_data, selected_source_ips, selected_destination_ips, anomaly_range):
     df = pd.DataFrame(stored_data)
 
     if df.empty:
         empty_fig = px.scatter(title="Aucune donnée disponible")
         return empty_fig, [], empty_fig, empty_fig, empty_fig
+
+    # Filtrage des données
+    df = df[(df["anomaly_score"] >= anomaly_range[0]) & (df["anomaly_score"] <= anomaly_range[1])]
+
+    if selected_source_ips:
+        df = df[df["source_ip"].isin(selected_source_ips)]
+    
+    if selected_destination_ips:
+        df = df[df["destination_ip"].isin(selected_destination_ips)]
 
     # Graphique des connexions réseau avec anomalies
     traffic_fig = px.scatter(
