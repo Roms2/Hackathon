@@ -6,7 +6,7 @@ import requests
 from dash.dependencies import Input, Output, State
 
 # URL de l'API Backend
-API_URL = "http://20.199.24.245/:8000/get_data"
+API_URL = "http://backend:8000/get_data"
 
 # Initialisation de l'application Dash
 app = dash.Dash(__name__)
@@ -100,7 +100,7 @@ def update_visuals(stored_data):
         y="anomaly_score",
         color="source_ip",
         title="Activité Réseau & Anomalies",
-        labels={"timestamp": "Temps", "anomaly_score": "Score d'Anomalie"},
+        labels={"timestamprinp": "Temps", "anomaly_score": "Score d'Anomalie"},
         size="anomaly_score",
         hover_data=["source_ip", "destination_ip", "port"]
     )
