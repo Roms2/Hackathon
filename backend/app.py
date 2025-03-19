@@ -248,7 +248,7 @@ def watch_and_process():
 
         except Exception as e:
             print(f"⚠️ Erreur : {e}", flush=True)
-            time.sleep(3)
+            time.sleep(2)
 
 # Délai avant lancement pour s'assurer que la BDD est prête
 time.sleep(4)
@@ -272,7 +272,7 @@ def temps_reel():
 
         print(f"📄 Nouveau fichier TXT généré : {file_name} ({len(raw)} lignes)")
 
-        time.sleep(5) # ✅ Attendre 5 secondes avant de générer un nouveau fichier
+        time.sleep(2) # ✅ Attendre 5 secondes avant de générer un nouveau fichier
 
 # ------------------------ 5 🚀 API FASTAPI ------------------------
 
@@ -297,7 +297,7 @@ def get_data(protocol: str = "all"):
         df = pd.read_sql_query("""
             SELECT timestamp, src_bytes, dst_bytes, protocol_type_tcp, protocol_type_udp, protocol_type_icmp, Predicted_Class, Prediction_Probability 
             FROM connections 
-            ORDER BY timestamp DESC LIMIT 100
+            ORDER BY timestamp DESC LIMIT 300
         """, conn)
         conn.close()
 
