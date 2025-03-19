@@ -302,13 +302,14 @@ def get_data():
 
 # ------------------------ 6 🚀 THREADS ------------------------
 
-# Lancer le thread de génération automatique
-thread_generate = threading.Thread(target=temps_reel, daemon=True)
-thread_generate.start()
 
 # Lancer le thread de surveillance
 thread = threading.Thread(target=watch_and_process, daemon=True)
 thread.start()
+
+# Lancer le thread de génération automatique
+thread_generate = threading.Thread(target=temps_reel, daemon=True)
+thread_generate.start()
 
 
 if __name__ == "__main__":
