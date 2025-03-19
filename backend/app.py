@@ -26,7 +26,8 @@ def init_db():
     Initialise la base de données SQLite en créant la table `connections` si elle n’existe pas.
     """
     try:
-        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, timeout=10)
+
         cursor = conn.cursor()
 
         # Création de la table avec 117 colonnes + timestamp
@@ -198,8 +199,11 @@ def watch_and_process():
                 df_processed.insert(0, "timestamp", datetime.utcnow().isoformat())
 
                 
-                conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+                conn = sqlite3.connect(DB_PATH, timeout=10)
+
                 cursor = conn.cursor()
+
+                print(f"🔍 Colonnes du DataFrame après preprocessing: {df_processed.columns.tolist()}", flush=True)
 
 
                 try:
@@ -288,7 +292,8 @@ app.add_middleware(
 @app.get("/get_data")
 def get_data(protocol: str = "all"):
     try:
-        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, timeout=10)
+
         df = pd.read_sql_query("""
             SELECT timestamp, src_bytes, dst_bytes, protocol_type_tcp, protocol_type_udp, protocol_type_icmp, Predicted_Class, Prediction_Probability 
             FROM connections 
