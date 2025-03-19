@@ -183,15 +183,7 @@ def update_visuals(stored_data, selected_source_ips, selected_destination_ips, a
         title="Répartition des Protocoles Réseau"
     )
 
-    # Graphique en barres des connexions par IP source
-    source_ip_bar = px.bar(
-        df["source_ip"].value_counts().reset_index(),
-        x="index", y="source_ip",
-        title="Nombre de Connexions par IP Source",
-        labels={"index": "IP Source", "source_ip": "Nombre de Connexions"}
-    )
-
-    return traffic_fig, df.to_dict("records"), anomaly_histogram, protocol_pie, source_ip_bar
+    return traffic_fig, df.to_dict("records"), anomaly_histogram, protocol_pie
 
 
 # Lancement du serveur Dash
