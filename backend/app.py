@@ -297,7 +297,7 @@ def get_data(protocol: str = "all"):
         df = pd.read_sql_query("""
             SELECT timestamp, src_bytes, dst_bytes, protocol_type_tcp, protocol_type_udp, protocol_type_icmp, Predicted_Class, Prediction_Probability 
             FROM connections 
-            ORDER BY timestamp DESC LIMIT 300
+            ORDER BY timestamp DESC LIMIT 150
         """, conn)
         conn.close()
 
