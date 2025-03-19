@@ -1,19 +1,29 @@
 services:
   backend:
     build: ./backend
+    container_name: backend
     ports: 
-    - "8000:8000"
+      - "8000:8000"
     volumes: 
       - /home/azureuser/Hackathon/backend/watched_folder:/app/watched_folder  # Lien entre la VM et le conteneur
       - /home/azureuser/Hackathon/backend/network_traffic.db:/app/network_traffic.db
     restart: always
+    networks:
+      - app_network  # Ajout du réseau Docker
 
   frontend:
     build: ./frontend
+    container_name: frontend
     ports:
-    - "8051:8051"
+      - "8051:8051"
     volumes:
-    - ./frontend:/app
+      - ./frontend:/app
     depends_on:
-    - backend
+      - backend
     restart: always
+    networks:
+      - app_network  # Ajout du réseau Docker
+
+networks:
+  app_network:
+    driver: bridge
