@@ -54,13 +54,19 @@ app.layout = html.Div([
 
 # Fonction pour récupérer les données depuis le backend en fonction des filtres
 def fetch_data(protocol):
+    print("🔄 Récupération des données en cours...")  # Log début récupération
+
     try:
         params = {"protocol": protocol} if protocol != "all" else {}
         response = requests.get(API_URL, params=params)
+
         if response.status_code == 200:
+            print("✅ Données chargées avec succès !")  # Log succès
             return pd.DataFrame(response.json())
+
     except Exception as e:
-        print(f"❌ Erreur API : {e}")
+        print(f"❌ Erreur lors de la récupération des données : {e}")
+
     return pd.DataFrame()
 
 
@@ -71,8 +77,7 @@ def fetch_data(protocol):
 )
 def store_data(n_clicks, selected_protocol):
     if n_clicks > 0:
-        df = fetch_data(selected_protocol)
-        return df.to_dict("records")
+        return fetch_data(selected_protocol).to_dict("records")
     return []
 
 
@@ -102,7 +107,7 @@ def update_visuals(stored_data):
 
     return fig, df.to_dict("records")
 
+
 # Lancement du serveur Dash
 if __name__ == '__main__':
     app.run_server(host='0.0.0.0', port=8051, debug=True)
-

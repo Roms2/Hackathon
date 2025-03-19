@@ -272,7 +272,7 @@ def temps_reel():
 
         print(f"📄 Nouveau fichier TXT généré : {file_name} ({len(raw)} lignes)")
 
-        time.sleep(3) # ✅ Attendre 3 secondes avant de générer un nouveau fichier
+        time.sleep(5) # ✅ Attendre 5 secondes avant de générer un nouveau fichier
 
 # ------------------------ 5 🚀 API FASTAPI ------------------------
 
@@ -297,7 +297,7 @@ def get_data(protocol: str = "all"):
         df = pd.read_sql_query("""
             SELECT timestamp, src_bytes, dst_bytes, protocol_type_tcp, protocol_type_udp, protocol_type_icmp, Predicted_Class, Prediction_Probability 
             FROM connections 
-            ORDER BY timestamp DESC LIMIT 150
+            ORDER BY timestamp DESC LIMIT 100
         """, conn)
         conn.close()
 
