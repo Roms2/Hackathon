@@ -6,7 +6,7 @@ import requests
 from dash.dependencies import Input, Output, State
 
 # URL de l'API Backend
-API_URL = "http://127.0.0.1:8000/api/get_data"
+API_URL = "http://127.0.0.1:8000/get_data"
 
 # Initialisation de l'application Dash
 app = dash.Dash(__name__)
@@ -60,10 +60,10 @@ def fetch_data(protocol):
         if response.status_code == 200:
             return pd.DataFrame(response.json())
     except Exception as e:
-        print(f"Erreur API : {e}")
+        print(f"❌ Erreur API : {e}")
     return pd.DataFrame()
 
-# Callback pour stocker et afficher les données
+
 @app.callback(
     Output("stored-data", "data"),
     [Input("load-data-btn", "n_clicks")],
@@ -74,6 +74,7 @@ def store_data(n_clicks, selected_protocol):
         df = fetch_data(selected_protocol)
         return df.to_dict("records")
     return []
+
 
 # Callback pour mettre à jour le graphique et le tableau
 @app.callback(

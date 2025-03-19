@@ -284,14 +284,44 @@ app.add_middleware(
 
 
 @app.get("/get_data")
-def get_data():
+def get_data(protocol: str = "all"):
     try:
         conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-        df = pd.read_sql_query("SELECT * FROM connections ORDER BY timestamp DESC LIMIT 100", conn)
+        df = pd.read_sql_query("""
+            SELECT timestamp, src_bytes, dst_bytes, protocol_type_tcp, protocol_type_udp, protocol_type_icmp, Predicted_Class, Prediction_Probability 
+            FROM connections 
+            ORDER BY timestamp DESC LIMIT 100
+        """, conn)
         conn.close()
+
+        # Convertir les colonnes binaires en une colonne "protocol"
+        def get_protocol(row):
+            if row["protocol_type_tcp"] == 1:
+                return "TCP"
+            elif row["protocol_type_udp"] == 1:
+                return "UDP"
+            elif row["protocol_type_icmp"] == 1:
+                return "ICMP"
+            return "Unknown"
+
+        df["protocol"] = df.apply(get_protocol, axis=1)
+
+        # Renommer les colonnes pour correspondre à Dash
+        df.rename(columns={
+            "src_bytes": "source_ip",  
+            "dst_bytes": "destination_ip",
+            "Predicted_Class": "port",
+            "Prediction_Probability": "anomaly_score"
+        }, inplace=True)
+
+        # Appliquer le filtre protocole
+        if protocol != "all":
+            df = df[df["protocol"] == protocol]
+
         return df.to_dict(orient="records") if not df.empty else {"message": "Aucune donnée disponible"}
     except Exception as e:
         return {"error": str(e)}
+
 
 # ------------------------ 6 🚀 THREADS ------------------------
 
