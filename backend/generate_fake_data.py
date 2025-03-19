@@ -215,10 +215,9 @@ def generate_fake_row(possible_values, continuous_features):
             fake_row[col] = np.random.choice(values)  # Valeurs catégoriques aléatoires
     return fake_row
 
-def generate_fake_data(possible_values, continuous_features, n):
+def generate_fake_data(possible_values, continuous_features, n=10):
     """Génère plusieurs lignes factices."""
     return pd.DataFrame([generate_fake_row(possible_values, continuous_features) for _ in range(n)])
 
 def generate():
-    n = random.randint(1, 10)  # Nombre aléatoire de lignes
-    return generate_fake_data(possible_values, continuous_features, n)
+    return generate_fake_data(possible_values, continuous_features, n=10)
