@@ -190,12 +190,14 @@ def watch_and_process():
                 df_processed = preprocess_data(df_raw)
 
                 if df_processed.shape[1] != 119:
-                    print(f"⚠️ Erreur après preprocessing : {df_processed.shape[1]} colonnes trouvées, 117 attendues.", flush=True)
+                    print(f"⚠️ Erreur après preprocessing : {df_processed.shape[1]} colonnes trouvées, 119 attendues.", flush=True)
                     os.remove(file_path)
                     continue
                 
-                
+                # Ajouter un timestamp en première position
+                df_processed.insert(0, "timestamp", datetime.utcnow().isoformat())
 
+                
                 conn = sqlite3.connect(DB_PATH, check_same_thread=False)
                 cursor = conn.cursor()
 
