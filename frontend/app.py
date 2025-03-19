@@ -3,13 +3,10 @@ from dash import dcc, html, dash_table
 import plotly.express as px
 import pandas as pd
 import requests
-import random
-import time
 from dash.dependencies import Input, Output, State
 
-# URL de l'API Backend pour récupérer des données et faire des prédictions
+# URL de l'API Backend
 API_URL = "http://127.0.0.1:8000/api/get_data"
-PREDICT_API_URL = "http://127.0.0.1:8000/api/predict"  # Endpoint fictif pour les prédictions
 
 # Initialisation de l'application Dash
 app = dash.Dash(__name__)
@@ -30,11 +27,8 @@ app.layout = html.Div([
         style={"width": "50%"}
     ),
 
-    # Boutons pour charger les données et simuler en temps réel
-    html.Div([
-        html.Button("🔄 Charger les Données", id="load-data-btn", n_clicks=0),
-        html.Button("⚡ Simuler Temps Réel", id="simulate-btn", n_clicks=0, style={"margin-left": "10px"})
-    ]),
+    # Bouton pour demander les données filtrées
+    html.Button("🔄 Charger les Données", id="load-data-btn", n_clicks=0),
 
     # Graphique des connexions réseau
     dcc.Graph(id="network-traffic-graph"),
@@ -54,7 +48,7 @@ app.layout = html.Div([
         style_table={'overflowX': 'auto'}
     ),
 
-    # Stockage des données
+    # Stockage des données (évite de recharger plusieurs fois les mêmes données)
     dcc.Store(id="stored-data"),
 ])
 
@@ -69,28 +63,7 @@ def fetch_data(protocol):
         print(f"Erreur API : {e}")
     return pd.DataFrame()
 
-# Fonction pour générer de fausses données
-def generate_fake_data():
-    protocols = ["TCP", "UDP", "ICMP"]
-    return {
-        "timestamp": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "source_ip": f"192.168.1.{random.randint(1, 255)}",
-        "destination_ip": f"10.0.0.{random.randint(1, 255)}",
-        "protocol": random.choice(protocols),
-        "port": random.randint(1000, 65535)
-    }
-
-# Fonction pour obtenir une vraie prédiction du backend
-def get_prediction(fake_data):
-    try:
-        response = requests.post(PREDICT_API_URL, json=fake_data)
-        if response.status_code == 200:
-            return response.json().get("anomaly_score", random.uniform(0, 1))
-    except Exception as e:
-        print(f"Erreur API : {e}")
-    return random.uniform(0, 1)  # Valeur aléatoire en cas d'échec
-
-# Callback pour charger les données filtrées depuis l'API
+# Callback pour stocker et afficher les données
 @app.callback(
     Output("stored-data", "data"),
     [Input("load-data-btn", "n_clicks")],
@@ -101,26 +74,6 @@ def store_data(n_clicks, selected_protocol):
         df = fetch_data(selected_protocol)
         return df.to_dict("records")
     return []
-
-# Callback pour simuler des données en temps réel
-@app.callback(
-    Output("stored-data", "data"),
-    [Input("simulate-btn", "n_clicks")],
-    [State("stored-data", "data")]
-)
-def simulate_real_time(n_clicks, stored_data):
-    if n_clicks > 0:
-        stored_data = stored_data or []
-        
-        # Générer et envoyer plusieurs fausses données pour simuler un flux temps réel
-        for _ in range(5):  # 5 itérations pour simuler du "temps réel"
-            fake_data = generate_fake_data()
-            fake_data["anomaly_score"] = get_prediction(fake_data)  # Ajouter le score réel
-            stored_data.append(fake_data)
-            time.sleep(1)  # Pause pour simuler l'arrivée progressive des données
-        
-        return stored_data
-    return stored_data
 
 # Callback pour mettre à jour le graphique et le tableau
 @app.callback(
@@ -151,3 +104,4 @@ def update_visuals(stored_data):
 # Lancement du serveur Dash
 if __name__ == '__main__':
     app.run_server(host='0.0.0.0', port=8051, debug=True)
+

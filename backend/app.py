@@ -198,14 +198,7 @@ def watch_and_process():
 
                 conn = sqlite3.connect(DB_PATH, check_same_thread=False)
                 cursor = conn.cursor()
-                print(f"📊 Vérification avant insertion :",flush=True)
 
-                print(f"🔢 Colonnes du DataFrame traité : {df_processed.shape[1]}",flush=True)
-                print(f"🔢 Nombre de valeurs par ligne : {len(df_processed.values.tolist()[0])}",flush=True)
-                print(f"🧐 Colonnes du DataFrame après preprocessing: {df_processed.columns.tolist()}", flush=True)
-                df_processed.insert(0, "timestamp", datetime.utcnow().isoformat())
-                print(f"🔢 Nombre de valeurs par ligne : {len(df_processed.values.tolist()[0])}",flush=True)
-                print(f"----------🧐 Colonnes du DataFrame après TIMESTAMP:--------- {df_processed.columns.tolist()}", flush=True)
 
                 try:
                     cursor.executemany("""
