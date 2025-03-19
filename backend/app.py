@@ -248,7 +248,7 @@ def watch_and_process():
 
         except Exception as e:
             print(f"⚠️ Erreur : {e}", flush=True)
-            time.sleep(2)
+            time.sleep(3)
 
 # Délai avant lancement pour s'assurer que la BDD est prête
 time.sleep(4)
@@ -272,7 +272,7 @@ def temps_reel():
 
         print(f"📄 Nouveau fichier TXT généré : {file_name} ({len(raw)} lignes)")
 
-        time.sleep(2) # ✅ Attendre 5 secondes avant de générer un nouveau fichier
+        time.sleep(3) # ✅ Attendre 3 secondes avant de générer un nouveau fichier
 
 # ------------------------ 5 🚀 API FASTAPI ------------------------
 
