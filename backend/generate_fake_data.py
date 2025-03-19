@@ -1,5 +1,5 @@
 import numpy as np
-import panda as pd
+import pandas as pd
 import random
 
 possible_values = {'duration': (np.int64(0), np.int64(57715)),
