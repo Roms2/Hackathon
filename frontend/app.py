@@ -6,7 +6,7 @@ import requests
 from dash.dependencies import Input, Output, State
 
 # URL de l'API Backend
-API_URL = "http://backend:8000/get_data"
+API_URL = "http://20.199.24.245/:8000/get_data"
 
 # Initialisation de l'application Dash
 app = dash.Dash(__name__)

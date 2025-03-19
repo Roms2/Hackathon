@@ -12,7 +12,7 @@ from generate_fake_data import generate
 
 # ------------------------ 1️⃣ 🚀 INITIALISATION VARIABLES ------------------------
 
-DB_PATH = "/app/network_traffic.db"  # 🔹 Assurez-vous que ce chemin est correct !
+DB_PATH = "/app/network_traffic.db" # Chemin de la base de données SQLite
 MODEL_PATH = "model.pkl"
 WATCHED_FOLDER = "/app/watched_folder"
 
@@ -203,7 +203,7 @@ def watch_and_process():
 
                 cursor = conn.cursor()
 
-                print(f"🔍 Colonnes du DataFrame après preprocessing: {df_processed.columns.tolist()}", flush=True)
+                # print(f"🔍 Colonnes du DataFrame après preprocessing: {df_processed.columns.tolist()}", flush=True)
 
 
                 try:
