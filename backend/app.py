@@ -8,6 +8,7 @@ import time
 import threading
 from process import preprocess_data  # Fonction de prétraitement
 import sys
+from generate_fake_data import generate
 
 # ------------------------ 1️⃣ 🚀 INITIALISATION VARIABLES ------------------------
 
@@ -251,15 +252,28 @@ def watch_and_process():
             time.sleep(3)
 
 # Délai avant lancement pour s'assurer que la BDD est prête
-time.sleep(2)
+time.sleep(4)
 
-# Lancer le thread de surveillance
-thread = threading.Thread(target=watch_and_process, daemon=True)
-thread.start()
 
 # ------------------------ 4️⃣ 🚀 API Valeurs auto ------------------------
 
+def temps_reel():
+    """
+    Génère un fichier texte contenant des données factices toutes les 5 secondes.
+    Le fichier est au format CSV (séparé par des virgules) et sans en-têtes.
+    """
+    while True:
+        raw = generate()  # Génération des données factices
 
+        file_name = f"generated_data_{int(time.time())}.txt"
+        file_path = os.path.join(WATCHED_FOLDER, file_name)
+
+        # Sauvegarde au format TXT (CSV avec virgules, sans index, sans en-têtes)
+        raw.to_csv(file_path, index=False, header=False, sep=",")
+
+        print(f"📄 Nouveau fichier TXT généré : {file_name} ({len(raw)} lignes)")
+
+        time.sleep(5) # ✅ Attendre 5 secondes avant de générer un nouveau fichier
 
 # ------------------------ 5 🚀 API FASTAPI ------------------------
 
@@ -278,15 +292,19 @@ app.add_middleware(
 
 @app.get("/get_data")
 def get_data():
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-    df = pd.read_sql_query("SELECT * FROM connections ORDER BY timestamp DESC LIMIT 100", conn)
-    conn.close()
-    
-    # Renvoie les données sous forme de liste de dictionnaires
-    return df.to_dict(orient="records")
+    try:
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+        df = pd.read_sql_query("SELECT * FROM connections ORDER BY timestamp DESC LIMIT 100", conn)
+        conn.close()
+        return df.to_dict(orient="records") if not df.empty else {"message": "Aucune donnée disponible"}
+    except Exception as e:
+        return {"error": str(e)}
 
+# ------------------------ 6 🚀 THREADS ------------------------
 
-
+# Lancer le thread de génération automatique
+thread_generate = threading.Thread(target=temps_reel, daemon=True)
+thread_generate.start()
 
 # Lancer le thread de surveillance
 thread = threading.Thread(target=watch_and_process, daemon=True)
