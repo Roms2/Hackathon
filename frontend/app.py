@@ -48,9 +48,15 @@ app.layout = html.Div([
         style_table={'overflowX': 'auto'}
     ),
 
-    # Stockage des données (évite de recharger plusieurs fois les mêmes données)
+    # Graphiques supplémentaires
+    dcc.Graph(id="anomaly-histogram"),
+    dcc.Graph(id="protocol-pie-chart"),
+    dcc.Graph(id="source-ip-bar-chart"),
+
+    # Stockage des données
     dcc.Store(id="stored-data"),
 ])
+
 
 # Fonction pour récupérer les données depuis le backend en fonction des filtres
 def fetch_data(protocol):
@@ -81,31 +87,56 @@ def store_data(n_clicks, selected_protocol):
     return []
 
 
-# Callback pour mettre à jour le graphique et le tableau
+# Callback pour mettre à jour les graphiques et le tableau
 @app.callback(
     [Output("network-traffic-graph", "figure"),
-     Output("log-table", "data")],
+     Output("log-table", "data"),
+     Output("anomaly-histogram", "figure"),
+     Output("protocol-pie-chart", "figure"),
+     Output("source-ip-bar-chart", "figure")],
     [Input("stored-data", "data")]
 )
 def update_visuals(stored_data):
     df = pd.DataFrame(stored_data)
 
     if df.empty:
-        return px.scatter(title="Aucune donnée disponible"), []
+        empty_fig = px.scatter(title="Aucune donnée disponible")
+        return empty_fig, [], empty_fig, empty_fig, empty_fig
 
     # Graphique des connexions réseau avec anomalies
-    fig = px.scatter(
+    traffic_fig = px.scatter(
         df,
         x="timestamp",
         y="anomaly_score",
         color="source_ip",
         title="Activité Réseau & Anomalies",
-        labels={"timestamprinp": "Temps", "anomaly_score": "Score d'Anomalie"},
+        labels={"timestamp": "Temps", "anomaly_score": "Score d'Anomalie"},
         size="anomaly_score",
         hover_data=["source_ip", "destination_ip", "port"]
     )
 
-    return fig, df.to_dict("records")
+    # Histogramme des scores d'anomalie
+    anomaly_histogram = px.histogram(
+        df, x="anomaly_score", nbins=20,
+        title="Distribution des Scores d'Anomalie",
+        labels={"anomaly_score": "Score d'Anomalie"}
+    )
+
+    # Graphique circulaire des protocoles utilisés
+    protocol_pie = px.pie(
+        df, names="protocol",
+        title="Répartition des Protocoles Réseau"
+    )
+
+    # Graphique en barres des connexions par IP source
+    source_ip_bar = px.bar(
+        df["source_ip"].value_counts().reset_index(),
+        x="index", y="source_ip",
+        title="Nombre de Connexions par IP Source",
+        labels={"index": "IP Source", "source_ip": "Nombre de Connexions"}
+    )
+
+    return traffic_fig, df.to_dict("records"), anomaly_histogram, protocol_pie, source_ip_bar
 
 
 # Lancement du serveur Dash
